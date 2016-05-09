@@ -22,3 +22,7 @@
       - Or [All in one .apk](https://drive.google.com/file/d/0B1-d3Xs9yeFHSDNMNXdZUERCbjg/view?usp=sharing)  
       md5: dd68f327aaa7441c894dfbbae5d58996
   - Xposed repo: http://repo.xposed.info/module/com.kapp.listen2youtube
+
+## Troubleshooting:
+### Download or Listen online error
+I have 3 servers, each servers work on different time whole day. If you face this problem, may be one server is down at this time, it will work fine soon, please comeback later.
