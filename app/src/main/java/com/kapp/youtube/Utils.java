@@ -11,15 +11,11 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.MutableData;
-import com.firebase.client.Transaction;
 import com.kapp.youtube.model.LocalFileData;
 
 import org.json.JSONException;
@@ -107,14 +103,14 @@ public class Utils {
 
             Log.e(TAG, "getLinkAsync - line 36: ucon.getResponseCode() " + conn.getResponseCode());
 
-            increaseValue("getLinkTimes");
-
+            Bundle bundle = new Bundle();
+            bundle.putString("youtubeId", youtube_id);
+            MainApplication.getFirebaseAnalytics().logEvent("Get Link", bundle);
 
             if (conn.getResponseCode() / 100 == 2)
                 result = server + "?id=" + youtube_id + "&type=redirect";
             else {
                 result = server + "?id=" + youtube_id;
-                increaseValue("useCloudServerTimes");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -131,7 +127,6 @@ public class Utils {
         URL url = new URL(urlStr);
         URLConnection con = url.openConnection();
         InputStream in = con.getInputStream();
-        String encoding = con.getContentEncoding();
         return convertStreamToString(in);
     }
 
@@ -174,30 +169,5 @@ public class Utils {
             e.printStackTrace();
         }
         return 0;
-    }
-
-    public static void increaseValue(String key) {
-        getDeviceNode().child(key).runTransaction(
-                getIncreaseValueTransaction(), false
-        );
-    }
-
-    private static Firebase getDeviceNode() {
-        return new Firebase(Constants.FIREBASE_SERVER).child(Settings.getDeviceKey());
-    }
-
-    private static Transaction.Handler getIncreaseValueTransaction() {
-        return new Transaction.Handler() {
-            @Override
-            public Transaction.Result doTransaction(MutableData currentData) {
-                currentData.setValue((Long) currentData.getValue() + 1);
-                return Transaction.success(currentData);
-            }
-
-            @Override
-            public void onComplete(FirebaseError firebaseError, boolean b, DataSnapshot dataSnapshot) {
-
-            }
-        };
     }
 }

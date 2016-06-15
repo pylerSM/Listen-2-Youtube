@@ -10,12 +10,14 @@ import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.kapp.youtube.MainApplication;
 import com.kapp.youtube.R;
 import com.kapp.youtube.Settings;
 import com.kapp.youtube.Utils;
@@ -151,7 +153,6 @@ public class DownloadService extends Service {
             if (listener != null)
                 listener.onQueueChange();
             processDownload();
-            Utils.increaseValue("downloadTimes");
         } else if (intent.getAction().equals(ACTION_REMOVE_DOWNLOAD)) {
             removeDownloadTask(intent.getStringExtra(URL));
         }
@@ -284,7 +285,9 @@ public class DownloadService extends Service {
             mBuilder.setContentText("Error: " + message);
         else {
             mBuilder.setContentText("Download completed");
-            Utils.increaseValue("downloadSuccessTimes");
+            Bundle bundle = new Bundle();
+            bundle.putString("file", downloadingTaskInfo.title);
+            MainApplication.getFirebaseAnalytics().logEvent("Download Success", bundle);
         }
         notificationManager.notify(++notificationId, mBuilder.build());
         if (!error) {

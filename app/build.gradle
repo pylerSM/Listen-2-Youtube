@@ -7,8 +7,8 @@ android {
         applicationId "com.kapp.youtube"
         minSdkVersion 16
         targetSdkVersion 23
-        versionCode 5
-        versionName "2.5 - DEBUG"
+        versionCode 6
+        versionName "1.1"
     }
     buildTypes {
         release {
@@ -62,7 +62,7 @@ dependencies {
     compile 'com.mani:ThinDownloadManager:1.2.5'
     compile 'jp.wasabeef:recyclerview-animators:2.2.3'
     compile 'de.mrmaffen:vlc-android-sdk:1.9.8'
-    compile 'com.firebase:firebase-client-android:2.5.2+'
+    compile 'com.google.firebase:firebase-core:9.0.2'
     compile 'com.afollestad.material-dialogs:core:0.8.5.9'
 }
 

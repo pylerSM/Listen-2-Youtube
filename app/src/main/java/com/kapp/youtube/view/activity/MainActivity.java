@@ -7,6 +7,8 @@ import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Build;
@@ -35,6 +37,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.Toast;
@@ -45,6 +50,8 @@ import com.github.florent37.materialviewpager.MaterialViewPager;
 import com.github.florent37.materialviewpager.MaterialViewPagerAnimator;
 import com.github.florent37.materialviewpager.MaterialViewPagerHelper;
 import com.github.florent37.materialviewpager.header.HeaderDesign;
+import com.google.firebase.analytics.FirebaseAnalytics;
+import com.kapp.youtube.MainApplication;
 import com.kapp.youtube.R;
 import com.kapp.youtube.Settings;
 import com.kapp.youtube.Utils;
@@ -126,6 +133,8 @@ public class MainActivity extends AppCompatActivity
     private boolean grantedPermission = true;
     private boolean loadLocalFile = true;
 
+    private WebView mWebView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -187,8 +196,7 @@ public class MainActivity extends AppCompatActivity
             if (savedInstanceState.getBoolean(DRAWER_OPENED_KEY, false))
                 drawer.openDrawer(GravityCompat.START);
             currentTabIndex = savedInstanceState.getInt(CURRENT_TAB_INDEX_KEY, 0);
-        } else
-            Utils.increaseValue("openAppTimes");
+        }
 
         // Test
 
@@ -305,6 +313,10 @@ public class MainActivity extends AppCompatActivity
             }
         };
         bindService(intent, serviceConnection, BIND_AUTO_CREATE);
+
+        mWebView = new WebView(this);
+        mWebView.setWebChromeClient(new WebChromeClient());
+        mWebView.getSettings().setJavaScriptEnabled(true);
     }
 
     private void onCardViewClick(View view, int position, int fragmentId) {
@@ -463,9 +475,10 @@ public class MainActivity extends AppCompatActivity
                     } else
                         Toast.makeText(MainActivity.this, "Create " + playlistName + " playlist have an error.", Toast.LENGTH_SHORT).show();
                     dialog.cancel();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("playListName", playlistName);
+                    MainApplication.getFirebaseAnalytics().logEvent("Create Play List", bundle);
                 }
-
-                Utils.increaseValue("createPlaylistTimes");
             }
         });
         dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener(new View.OnClickListener() {
@@ -527,6 +540,23 @@ public class MainActivity extends AppCompatActivity
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                break;
+            case R.id.nav_feedback:
+                PackageInfo pInfo;
+                try {
+                    pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                    Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
+                            "mailto", "khang.neon.1997@gmail.com", null));
+                    emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Feedback - Listen-2-Youtube App - " + pInfo.versionName);
+                    startActivity(Intent.createChooser(emailIntent, "Send feedback..."));
+                    Toast.makeText(MainActivity.this, "Thanks for your feedback!", Toast.LENGTH_SHORT).show();
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case R.id.nav_github:
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.github.com/Khang-NT/Listen-2-Youtube"));
+                startActivity(browserIntent);
                 break;
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -662,7 +692,8 @@ public class MainActivity extends AppCompatActivity
                     final JSONObject jsonObject = (JSONObject) result;
                     try {
                         final String title = jsonObject.getString("title"),
-                                album = jsonObject.getString("album");
+                                album = jsonObject.getString("album"),
+                                getLinkUrl = jsonObject.getString("getLinkUrl");
                         final JSONObject audio = jsonObject.getJSONObject("audio");
                         final List<String> items = new ArrayList<>(),
                                 urls = new ArrayList<>(), extensions = new ArrayList<>();
@@ -690,10 +721,38 @@ public class MainActivity extends AppCompatActivity
                                 })
                                 .onPositive(new MaterialDialog.SingleButtonCallback() {
                                     @Override
-                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    public void onClick(@NonNull final MaterialDialog dialog, @NonNull DialogAction which) {
                                         int index = dialog.getSelectedIndex();
+                                        Bundle bundle = new Bundle();
+                                        bundle.putString("type", items.get(0));
+                                        bundle.putString("title", title);
+                                        MainApplication.getFirebaseAnalytics().logEvent("Download", bundle);
                                         if (index == 0) {
-
+                                            final ProgressDialog convertMp3Dialog = ProgressDialog.show(MainActivity.this, "", "Converting to mp3...");
+                                            convertMp3Dialog.setCancelable(true);
+                                            mWebView.setWebViewClient(new WebViewClient() {
+                                                @Override
+                                                public void onPageFinished(WebView view, String url) {
+                                                    super.onPageFinished(view, url);
+                                                    Log.e(TAG, "onPageFinished: " + url);
+                                                    if (convertMp3Dialog.isShowing() && url.contains("middle.php")) {
+                                                        convertMp3Dialog.dismiss();
+                                                        Uri uri = Uri.parse(url);
+                                                        String server = uri.getQueryParameters("server").get(0);
+                                                        String hash = uri.getQueryParameters("hash").get(0);
+                                                        String file = uri.getQueryParameters("file").get(0);
+                                                        Intent intent = new Intent(MainActivity.this, DownloadService.class);
+                                                        intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
+                                                        intent.putExtra(DownloadService.URL, String.format("http://%s.listentoyoutube.com/download/%s/%s", server, hash, file));
+                                                        intent.putExtra(DownloadService.TITLE, title);
+                                                        intent.putExtra(DownloadService.ALBUM, album);
+                                                        intent.putExtra(DownloadService.FILE_NAME, Utils.getValidFileName(title) + ".mp3");
+                                                        intent.putExtra(DownloadService.TYPE, DownloadService.TYPE_MUSIC);
+                                                        startService(intent);
+                                                    }
+                                                }
+                                            });
+                                            mWebView.loadUrl(getLinkUrl);
                                         } else {
                                             String url = urls.get(index - 1);
                                             Intent intent = new Intent(MainActivity.this, DownloadService.class);
@@ -721,15 +780,6 @@ public class MainActivity extends AppCompatActivity
                     } catch (JSONException e) {
                         Toast.makeText(MainActivity.this, "Fetch urls error, please try again.", Toast.LENGTH_SHORT).show();
                     }
-//
-//
-//
-//
-//                    Bundle bundle = (Bundle) result;
-//                    Intent intent = new Intent(this, DownloadService.class);
-//                    intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
-//                    intent.putExtras(bundle);
-//                    startService(intent);
                 } else {
                     Toast.makeText(MainActivity.this, "Fetch urls error, please try again.", Toast.LENGTH_SHORT).show();
                 }
@@ -754,6 +804,9 @@ public class MainActivity extends AppCompatActivity
                 searchOnlineAdapter.removeAll();
                 progressDialog = ProgressDialog.show(this, null, "Search in progress...");
                 new YoutubeQuery(JOB_TYPE_SEARCH, this).execute(query, null);
+                Bundle bundle = new Bundle();
+                bundle.putString(FirebaseAnalytics.Param.VALUE, query);
+                MainApplication.getFirebaseAnalytics().logEvent(FirebaseAnalytics.Event.SEARCH, bundle);
                 break;
             case LOCAL_FILE_TAB:
                 progressDialog = ProgressDialog.show(this, null, "Search in progress...");

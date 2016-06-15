@@ -1,6 +1,6 @@
 package com.kapp.youtube;
 
-import android.util.Log;
+import android.os.Bundle;
 
 /**
  * Created by khang on 24/03/2016.
@@ -21,17 +21,18 @@ public class Constants {
 
     public static String getServer() {
         long time = System.currentTimeMillis() % DAY;
-        Log.d("TAG", "getServer: " + (time / (60 * 60 * 1000)));
-        return SERVER1;
-//        if (time < DAY_DIV_3) {
-//            Utils.increaseValue("useServer1Times");
-//            return SERVER1;
-//        } else if (time < DAY_DIV_3 * 2) {
-//            Utils.increaseValue("useServer2Times");
-//            return SERVER2;
-//        } else {
-//            Utils.increaseValue("useServer3Times");
-//            return SERVER3;
-//        }
+        Bundle bundle = new Bundle();
+        String server;
+        if (time < DAY_DIV_3) {
+            server = SERVER1;
+        } else if (time < DAY_DIV_3 * 2) {
+            server = SERVER2;
+        } else {
+            server = SERVER3;
+        }
+        bundle.putString("server", server);
+        bundle.putString("time", (time / (60 * 60 * 1000)) + "h");
+        MainApplication.getFirebaseAnalytics().logEvent("Select Server", bundle);
+        return server;
     }
 }

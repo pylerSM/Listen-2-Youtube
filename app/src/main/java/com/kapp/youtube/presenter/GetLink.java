@@ -33,6 +33,7 @@ public class GetLink extends BasePresenter<String, Void, JSONObject> {
                 JSONObject jsonObject = Utils.getAllStreams(youtubeId);
                 jsonObject.put("title", title);
                 jsonObject.put("album", album);
+                jsonObject.put("getLinkUrl", "http://www.listentoyoutube.com/process.php?url=https://www.youtube.com/watch?v=" + youtubeId);
                 return jsonObject;
             } catch (JSONException | IOException e) {
                 e.printStackTrace();

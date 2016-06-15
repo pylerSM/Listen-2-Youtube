@@ -3,7 +3,7 @@ package com.kapp.youtube;
 import android.app.Application;
 import android.content.Context;
 
-import com.firebase.client.Firebase;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 /**
  * Created by khang on 18/04/2016.
@@ -12,14 +12,18 @@ import com.firebase.client.Firebase;
 public class MainApplication extends Application {
     private static final String TAG = "MainApplication";
     public static Context applicationContext;
+    private static FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Firebase.setAndroidContext(this);
         applicationContext = this;
         Settings.init(this);
-        Settings.getDeviceKey();
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+    }
+
+    public static FirebaseAnalytics getFirebaseAnalytics() {
+        return mFirebaseAnalytics;
     }
 
 }

@@ -14,7 +14,6 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
 import com.kapp.youtube.Constants;
 import com.kapp.youtube.Settings;
-import com.kapp.youtube.Utils;
 import com.kapp.youtube.model.YoutubeData;
 
 import java.io.IOException;
@@ -60,9 +59,6 @@ public class YoutubeQuery extends BasePresenter<String, Void, YoutubeQuery.Resul
         search.setMaxResults(NUMBER_OF_VIDEOS_RETURNED);
         if (pageToken != null && pageToken.length() > 0)
             search.setPageToken(pageToken);
-        else {
-            Utils.increaseValue("searchTimes");
-        }
         if (query != null)
             search.setQ(query);
 

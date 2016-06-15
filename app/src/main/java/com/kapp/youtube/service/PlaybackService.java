@@ -16,6 +16,7 @@ import android.media.RemoteControlClient;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -24,6 +25,8 @@ import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
+import com.kapp.youtube.MainApplication;
 import com.kapp.youtube.R;
 import com.kapp.youtube.Settings;
 import com.kapp.youtube.Utils;
@@ -205,6 +208,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
         tryToGetAudioFocus();
         if (mAudioFocus != AudioFocus.Focused)
             return;
+
         if (playOnline) {
             if (position != -1) {
                 if (addToTrace)
@@ -221,6 +225,9 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
                 }
                 mediaPlayer.prepareWithYoutubeId(youtubeDataList.get(currentPosition).id);
             }
+            Bundle bundle = new Bundle();
+            bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, youtubeDataList.get(currentPosition).title);
+            MainApplication.getFirebaseAnalytics().logEvent(FirebaseAnalytics.Event.VIEW_ITEM, bundle);
         } else {
             if (position != -1) {
                 if (addToTrace)
@@ -238,7 +245,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
                 mediaPlayer.prepareWithUri(localFileDataList.get(currentPosition).getUri());
             }
         }
-        Utils.increaseValue("playTimes");
+
     }
 
     public void previous() {
