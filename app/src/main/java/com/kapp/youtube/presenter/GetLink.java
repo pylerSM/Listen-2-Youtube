@@ -24,18 +24,28 @@ public class GetLink extends BasePresenter<String, Void, JSONObject> {
     @Override
     protected JSONObject doInBackground(String... params) {
         String youtubeId = params[0];
-        String title = params[1];
-        String album = params[2];
+        if (params.length > 1) {
+            String title = params[1];
+            String album = params[2];
 
 
-        try {
-            JSONObject jsonObject = Utils.getAllStreams(youtubeId);
-            jsonObject.put("title", title);
-            jsonObject.put("album", album);
+            try {
+                JSONObject jsonObject = Utils.getAllStreams(youtubeId);
+                jsonObject.put("title", title);
+                jsonObject.put("album", album);
+                return jsonObject;
+            } catch (JSONException | IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("url", Utils.getLink(youtubeId));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
             return jsonObject;
-        } catch (JSONException | IOException e) {
-            e.printStackTrace();
-            return null;
         }
     }
 }

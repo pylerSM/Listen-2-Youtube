@@ -1,12 +1,13 @@
 package com.kapp.youtube.mediaplayer;
 
 import android.net.Uri;
-import android.os.Bundle;
 import android.util.Log;
 
 import com.kapp.youtube.presenter.GetLink;
 import com.kapp.youtube.presenter.IPresenterCallback;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
@@ -22,11 +23,11 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
     private static final String TAG = "MyMediaPlayer";
     private static MediaPlayer sMediaPlayer;
 
-    private static LibVLC sLibVLC;
+    public static LibVLC sLibVLC;
 
     static {
         ArrayList<String> options = new ArrayList<>();
-        //options.add("--http-reconnect");
+        options.add("--http-reconnect");
         options.add("--network-caching=6000");
         options.add("--no-video");
         sLibVLC = new LibVLC(options);
@@ -200,8 +201,13 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
     @Override
     public void onFinish(int jobId, Object result) {
         if (jobId == this.flag && result != null) {
-            Bundle bundle = (Bundle) result;
-            String url = bundle.getString("URL");
+            JSONObject jsonObject = (JSONObject) result;
+            String url = null;
+            try {
+                url = jsonObject.getString("url");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
             if (url != null) {
                 if (status == PlaybackStatus.PREPARING)
                     prepareWithUri(Uri.parse(url));

@@ -28,6 +28,7 @@ public class SettingsFragment extends PreferenceFragment implements Preference.O
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.pref_general);
         bindPreferenceSummaryToValue(findPreference(Settings.DOWNLOAD_FOLDER));
+        bindPreferenceSummaryToValue(findPreference(Settings.DOWNLOAD_FOLDER_FOR_VIDEO));
     }
 
     @Override

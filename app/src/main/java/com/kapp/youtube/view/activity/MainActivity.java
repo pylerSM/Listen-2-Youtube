@@ -692,7 +692,6 @@ public class MainActivity extends AppCompatActivity
                                     @Override
                                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                                         int index = dialog.getSelectedIndex();
-
                                         if (index == 0) {
 
                                         } else {
@@ -704,6 +703,8 @@ public class MainActivity extends AppCompatActivity
                                             intent.putExtra(DownloadService.ALBUM, album);
                                             intent.putExtra(DownloadService.FILE_NAME, Utils.getValidFileName(title)
                                                     + "." + extensions.get(index - 1));
+                                            intent.putExtra(DownloadService.TYPE, index == 1 ?
+                                                    DownloadService.TYPE_MUSIC : DownloadService.TYPE_VIDEO);
                                             startService(intent);
                                         }
                                         dialog.dismiss();

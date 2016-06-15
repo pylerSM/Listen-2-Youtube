@@ -35,6 +35,9 @@ import java.util.List;
  */
 public class DownloadService extends Service {
     private static final String TAG = "DownloadService";
+
+    public static final int TYPE_VIDEO = 0, TYPE_MUSIC = 1;
+
     public static final String ACTION_NEW_DOWNLOAD = "ACTION_NEW_DOWNLOAD";
     public static final String ACTION_REMOVE_DOWNLOAD = "ACTION_REMOVE_DOWNLOAD",
             ACTION_DO_NOTHING = "ACTION_DO_NOTHING";
@@ -43,7 +46,7 @@ public class DownloadService extends Service {
     public static final String FILE_NAME = "FILE_NAME";
     public static final String TITLE = "TITLE";
     public static final String ALBUM = "ALBUM";
-
+    public static final String TYPE = "TYPE";
 
     NotificationManager notificationManager;
     ThinDownloadManager downloadManager;
@@ -73,7 +76,6 @@ public class DownloadService extends Service {
                         this.progress = DownloadService.this.progress;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
                     return;
                 }
             }
@@ -143,7 +145,8 @@ public class DownloadService extends Service {
                     url,
                     intent.getStringExtra(FILE_NAME),
                     intent.getStringExtra(TITLE),
-                    intent.getStringExtra(ALBUM)
+                    intent.getStringExtra(ALBUM),
+                    intent.getIntExtra(TYPE, TYPE_MUSIC)
             ));
             if (listener != null)
                 listener.onQueueChange();
@@ -185,7 +188,8 @@ public class DownloadService extends Service {
             queue.remove(0);
             if (listener != null)
                 listener.onQueueChange();
-            File downloadFolder = Settings.getDownloadFolder();
+            File downloadFolder = downloadInfo.type == TYPE_MUSIC ?
+                    Settings.getDownloadFolder() : Settings.getDownloadFolderForVideo();
             File destinationFile = new File(downloadFolder, downloadInfo.fileName);
             DownloadProgressListener listener = new DownloadProgressListener();
             DownloadRequest request = new DownloadRequest(Uri.parse(downloadInfo.url))
@@ -284,7 +288,8 @@ public class DownloadService extends Service {
         }
         notificationManager.notify(++notificationId, mBuilder.build());
         if (!error) {
-            File downloadFolder = Settings.getDownloadFolder();
+            File downloadFolder = downloadingTaskInfo.type == TYPE_MUSIC ?
+                    Settings.getDownloadFolder() : Settings.getDownloadFolderForVideo();
             File destinationFile = new File(downloadFolder, downloadingTaskInfo.fileName);
             Uri uri = Uri.fromFile(destinationFile);
             long duration = Utils.getMediaDuration(uri);
@@ -308,12 +313,14 @@ public class DownloadService extends Service {
 
     public class DownloadInfo {
         public String url, fileName, title, album;
+        public int type;
 
-        public DownloadInfo(String url, String fileName, String title, String album) {
+        public DownloadInfo(String url, String fileName, String title, String album, int type) {
             this.url = url;
             this.fileName = fileName;
             this.title = title;
             this.album = album;
+            this.type = type;
         }
     }
 

@@ -28,5 +28,12 @@
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="Download folder" />
+        android:title="Music download folder" />
+    <EditTextPreference
+        android:capitalize="none"
+        android:key="DOWNLOAD_FOLDER_FOR_VIDEO"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Video download folder" />
 </PreferenceScreen>

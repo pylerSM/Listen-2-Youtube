@@ -165,10 +165,15 @@ public class Utils {
     }
 
     public static long getMediaDuration(Uri uri) {
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-        mmr.setDataSource(MainApplication.applicationContext, uri);
-        String durationStr = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-        return Long.parseLong(durationStr);
+        try {
+            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+            mmr.setDataSource(MainApplication.applicationContext, uri);
+            String durationStr = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            return Long.parseLong(durationStr);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     public static void increaseValue(String key) {

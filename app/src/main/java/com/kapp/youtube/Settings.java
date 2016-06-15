@@ -20,7 +20,7 @@ public class Settings {
     public static final String IS_REPEAT = "IS_REPEAT";
     public static final String IS_SHUFFLE = "IS_SHUFFLE",
             INIT_DEFAULT_VALUE = "INIT_DEFAULT_VALUE",
-            DOWNLOAD_FOLDER = "DOWNLOAD_FOLDER",
+            DOWNLOAD_FOLDER = "DOWNLOAD_FOLDER", DOWNLOAD_FOLDER_FOR_VIDEO = "DOWNLOAD_FOLDER_FOR_VIDEO",
             SEARCH_ONLY_MUSIC_VIDEO = "SEARCH_ONLY_MUSIC_VIDEO";
     public static final String IS_AUTO_PLAY = "IS_AUTO_PLAY";
     public static final String DEVICE_KEY = "DEVICE_KEY";
@@ -34,6 +34,8 @@ public class Settings {
             editor.putBoolean(INIT_DEFAULT_VALUE, false);
             editor.putString(DOWNLOAD_FOLDER,
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).toString());
+            editor.putString(DOWNLOAD_FOLDER_FOR_VIDEO,
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).toString());
             editor.apply();
         }
     }
@@ -57,6 +59,11 @@ public class Settings {
 
     public static File getDownloadFolder() {
         String path = getSharedPreferences().getString(DOWNLOAD_FOLDER, null);
+        return new File(path);
+    }
+
+    public static File getDownloadFolderForVideo() {
+        String path = getSharedPreferences().getString(DOWNLOAD_FOLDER_FOR_VIDEO, null);
         return new File(path);
     }
 

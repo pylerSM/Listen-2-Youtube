@@ -1,6 +1,6 @@
 package com.kapp.youtube;
 
-import java.util.Date;
+import android.util.Log;
 
 /**
  * Created by khang on 24/03/2016.
@@ -20,16 +20,18 @@ public class Constants {
             DAY_DIV_3 = DAY / 3;
 
     public static String getServer() {
-        long time = new Date().getTime() % DAY;
-        if (time < DAY_DIV_3) {
-            Utils.increaseValue("useServer1Times");
-            return SERVER1;
-        } else if (time < DAY_DIV_3 * 2) {
-            Utils.increaseValue("useServer2Times");
-            return SERVER2;
-        } else {
-            Utils.increaseValue("useServer3Times");
-            return SERVER3;
-        }
+        long time = System.currentTimeMillis() % DAY;
+        Log.d("TAG", "getServer: " + (time / (60 * 60 * 1000)));
+        return SERVER1;
+//        if (time < DAY_DIV_3) {
+//            Utils.increaseValue("useServer1Times");
+//            return SERVER1;
+//        } else if (time < DAY_DIV_3 * 2) {
+//            Utils.increaseValue("useServer2Times");
+//            return SERVER2;
+//        } else {
+//            Utils.increaseValue("useServer3Times");
+//            return SERVER3;
+//        }
     }
 }
