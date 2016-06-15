@@ -39,6 +39,8 @@ import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.florent37.materialviewpager.MaterialViewPager;
 import com.github.florent37.materialviewpager.MaterialViewPagerAnimator;
 import com.github.florent37.materialviewpager.MaterialViewPagerHelper;
@@ -63,6 +65,10 @@ import com.kapp.youtube.view.adapter.SearchOnlineAdapter;
 import com.kapp.youtube.view.fragment.RecyclerViewFragment;
 import com.lapism.searchview.view.SearchCodes;
 import com.lapism.searchview.view.SearchView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -347,13 +353,9 @@ public class MainActivity extends AppCompatActivity
     private void onSmallButtonClick(View view, int position, int fragmentId) {
         switch (fragmentId) {
             case SEARCH_ONLINE_TAB:
+                progressDialog = ProgressDialog.show(this, null, "Fetching urls...");
                 YoutubeData data = searchOnlineAdapter.getData(position);
-                Toast.makeText(MainActivity.this, "Start download " + data.getTitle(), Toast.LENGTH_SHORT).show();
-                Bundle bundle = new Bundle();
-                bundle.putString(DownloadService.TITLE, data.getTitle());
-                bundle.putString(DownloadService.ALBUM, data.getDescription());
-                bundle.putString(DownloadService.FILE_NAME, Utils.getValidFileName(data.getTitle()) + ".webm");
-                new GetLink(JOB_TYPE_GET_LINK, this).execute(data.id, bundle);
+                new GetLink(JOB_TYPE_GET_LINK, this).execute(data.id, data.getTitle(), data.getDescription());
                 break;
             case LOCAL_FILE_TAB:
                 showPopupPlaylist(view, position);
@@ -654,12 +656,81 @@ public class MainActivity extends AppCompatActivity
                             Toast.LENGTH_SHORT).show();
                 break;
             case JOB_TYPE_GET_LINK:
+                progressDialog.dismiss();
+                progressDialog = null;
                 if (result != null) {
-                    Bundle bundle = (Bundle) result;
-                    Intent intent = new Intent(this, DownloadService.class);
-                    intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
-                    intent.putExtras(bundle);
-                    startService(intent);
+                    final JSONObject jsonObject = (JSONObject) result;
+                    try {
+                        final String title = jsonObject.getString("title"),
+                                album = jsonObject.getString("album");
+                        final JSONObject audio = jsonObject.getJSONObject("audio");
+                        final List<String> items = new ArrayList<>(),
+                                urls = new ArrayList<>(), extensions = new ArrayList<>();
+                        urls.add(audio.getString("url"));
+                        extensions.add(audio.getString("extension"));
+                        items.add("Audio@mp3 - " + audio.getString("bitrate"));
+                        items.add("Audio@" + audio.getString("extension") + " - " + audio.getString("bitrate"));
+                        final JSONArray videos = jsonObject.getJSONArray("videos");
+                        for (int i = 0; i < videos.length(); i++) {
+                            items.add("Video@" + videos.getJSONObject(i).getString("extension")
+                                    + " - " + videos.getJSONObject(i).getString("resolution"));
+                            urls.add(videos.getJSONObject(i).getString("url"));
+                            extensions.add(videos.getJSONObject(i).getString("extension"));
+                        }
+                        MaterialDialog dialog = new MaterialDialog.Builder(this)
+                                .items(items)
+                                .title("Choose download link")
+                                .positiveText("OK")
+                                .autoDismiss(false)
+                                .itemsCallbackSingleChoice(-1, new MaterialDialog.ListCallbackSingleChoice() {
+                                    @Override
+                                    public boolean onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
+                                        return true;
+                                    }
+                                })
+                                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                    @Override
+                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                        int index = dialog.getSelectedIndex();
+
+                                        if (index == 0) {
+
+                                        } else {
+                                            String url = urls.get(index - 1);
+                                            Intent intent = new Intent(MainActivity.this, DownloadService.class);
+                                            intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
+                                            intent.putExtra(DownloadService.URL, url);
+                                            intent.putExtra(DownloadService.TITLE, title);
+                                            intent.putExtra(DownloadService.ALBUM, album);
+                                            intent.putExtra(DownloadService.FILE_NAME, Utils.getValidFileName(title)
+                                                    + "." + extensions.get(index - 1));
+                                            startService(intent);
+                                        }
+                                        dialog.dismiss();
+                                    }
+                                })
+                                .negativeText("Cancel")
+                                .onNegative(new MaterialDialog.SingleButtonCallback() {
+                                    @Override
+                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                        dialog.dismiss();
+                                    }
+                                }).build();
+                        dialog.show();
+                    } catch (JSONException e) {
+                        Toast.makeText(MainActivity.this, "Fetch urls error, please try again.", Toast.LENGTH_SHORT).show();
+                    }
+//
+//
+//
+//
+//                    Bundle bundle = (Bundle) result;
+//                    Intent intent = new Intent(this, DownloadService.class);
+//                    intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
+//                    intent.putExtras(bundle);
+//                    startService(intent);
+                } else {
+                    Toast.makeText(MainActivity.this, "Fetch urls error, please try again.", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case JOB_TYPE_FETCH_RELATED_VIDEO:

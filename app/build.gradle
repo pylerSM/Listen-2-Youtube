@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion "23.0.3"
     defaultConfig {
         applicationId "com.kapp.youtube"
         minSdkVersion 16
@@ -54,14 +54,16 @@ dependencies {
     compile project(':materialviewpager')
     compile project(':searchview')
     compile project(':ripple-lib')
-    compile 'com.android.support:appcompat-v7:23.3.0'
-    compile 'com.android.support:design:23.3.0'
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:design:23.4.0'
     compile 'com.github.bumptech.glide:glide:3.7.0'
     compile 'com.amulyakhare:com.amulyakhare.textdrawable:1.0.1'
     compile 'com.google.apis:google-api-services-youtube:v3-rev163-1.21.0'
     compile 'com.mani:ThinDownloadManager:1.2.5'
-    compile 'com.android.support:support-v4:23.3.0'
     compile 'jp.wasabeef:recyclerview-animators:2.2.3'
     compile 'de.mrmaffen:vlc-android-sdk:1.9.8'
     compile 'com.firebase:firebase-client-android:2.5.2+'
+    compile 'com.afollestad.material-dialogs:core:0.8.5.9'
 }
+
+apply plugin: 'com.google.gms.google-services'

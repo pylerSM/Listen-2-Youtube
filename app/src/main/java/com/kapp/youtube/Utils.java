@@ -22,8 +22,14 @@ import com.firebase.client.MutableData;
 import com.firebase.client.Transaction;
 import com.kapp.youtube.model.LocalFileData;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -114,6 +120,24 @@ public class Utils {
             e.printStackTrace();
         }
         return result;
+    }
+
+    public static JSONObject getAllStreams(String videoId) throws IOException, JSONException {
+        String url = Constants.getServer() + "?id=" + videoId + "&type=allstreams";
+        return new JSONObject(fetchResponse(url));
+    }
+
+    private static String fetchResponse(String urlStr) throws IOException {
+        URL url = new URL(urlStr);
+        URLConnection con = url.openConnection();
+        InputStream in = con.getInputStream();
+        String encoding = con.getContentEncoding();
+        return convertStreamToString(in);
+    }
+
+    private static String convertStreamToString(java.io.InputStream is) {
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 
 

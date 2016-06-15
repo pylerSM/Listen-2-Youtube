@@ -294,7 +294,6 @@ public class DownloadService extends Service {
             contentValues.put(MediaStore.Audio.AudioColumns.DISPLAY_NAME, downloadingTaskInfo.title);
             contentValues.put(MediaStore.Audio.AudioColumns.DURATION, duration);
             contentValues.put(MediaStore.Audio.AudioColumns.ALBUM, downloadingTaskInfo.album);
-            contentValues.put(MediaStore.Audio.AudioColumns.MIME_TYPE, "audio/webm");
             contentValues.put(MediaStore.Audio.AudioColumns.IS_MUSIC, 1);
             uri = getContentResolver().insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, contentValues);
             Log.d(TAG, "createCompleteNotification - line 247: " + uri);
