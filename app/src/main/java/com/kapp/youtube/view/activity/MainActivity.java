@@ -7,8 +7,6 @@ import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Build;
@@ -72,6 +70,10 @@ import com.kapp.youtube.view.adapter.SearchOnlineAdapter;
 import com.kapp.youtube.view.fragment.RecyclerViewFragment;
 import com.lapism.searchview.view.SearchCodes;
 import com.lapism.searchview.view.SearchView;
+
+import net.hockeyapp.android.FeedbackManager;
+import net.hockeyapp.android.UpdateManager;
+import net.hockeyapp.android.metrics.MetricsManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -317,6 +319,11 @@ public class MainActivity extends AppCompatActivity
         mWebView = new WebView(this);
         mWebView.setWebChromeClient(new WebChromeClient());
         mWebView.getSettings().setJavaScriptEnabled(true);
+
+        /* HOCKEY SDK*/
+        FeedbackManager.register(this);
+        MetricsManager.register(this, getApplication());
+        checkForUpdates();
     }
 
     private void onCardViewClick(View view, int position, int fragmentId) {
@@ -477,7 +484,7 @@ public class MainActivity extends AppCompatActivity
                     dialog.cancel();
                     Bundle bundle = new Bundle();
                     bundle.putString("playListName", playlistName);
-                    MainApplication.getFirebaseAnalytics().logEvent("Create Play List", bundle);
+                    MainApplication.getFirebaseAnalytics().logEvent("CreatePlayList", bundle);
                 }
             }
         });
@@ -514,6 +521,7 @@ public class MainActivity extends AppCompatActivity
         getContentResolver().unregisterContentObserver(observer);
         Log.d(TAG, "onDestroy - line 461: ");
         unbindService(serviceConnection);
+        unregisterManagers();
     }
 
     @Override
@@ -540,19 +548,12 @@ public class MainActivity extends AppCompatActivity
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                Bundle bundle = new Bundle();
+                bundle.putInt("Share", 1);
+                MainApplication.getFirebaseAnalytics().logEvent(FirebaseAnalytics.Event.SHARE, bundle);
                 break;
             case R.id.nav_feedback:
-                PackageInfo pInfo;
-                try {
-                    pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-                    Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
-                            "mailto", "khang.neon.1997@gmail.com", null));
-                    emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Feedback - Listen-2-Youtube App - " + pInfo.versionName);
-                    startActivity(Intent.createChooser(emailIntent, "Send feedback..."));
-                    Toast.makeText(MainActivity.this, "Thanks for your feedback!", Toast.LENGTH_SHORT).show();
-                } catch (PackageManager.NameNotFoundException e) {
-                    e.printStackTrace();
-                }
+                FeedbackManager.showFeedbackActivity(MainActivity.this);
                 break;
             case R.id.nav_github:
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.github.com/Khang-NT/Listen-2-Youtube"));
@@ -838,6 +839,21 @@ public class MainActivity extends AppCompatActivity
             } else
                 Toast.makeText(MainActivity.this, "This app can't work without granting storage access permission.", Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterManagers();
+    }
+
+    private void checkForUpdates() {
+        // Remove this for store builds!
+        UpdateManager.register(this);
+    }
+
+    private void unregisterManagers() {
+        UpdateManager.unregister();
     }
 
     private class MusicStoreObserver extends ContentObserver {

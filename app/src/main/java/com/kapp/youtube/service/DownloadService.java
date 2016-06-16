@@ -287,7 +287,7 @@ public class DownloadService extends Service {
             mBuilder.setContentText("Download completed");
             Bundle bundle = new Bundle();
             bundle.putString("file", downloadingTaskInfo.title);
-            MainApplication.getFirebaseAnalytics().logEvent("Download Success", bundle);
+            MainApplication.getFirebaseAnalytics().logEvent("DownloadSuccess", bundle);
         }
         notificationManager.notify(++notificationId, mBuilder.build());
         if (!error) {

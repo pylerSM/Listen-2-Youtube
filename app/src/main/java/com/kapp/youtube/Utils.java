@@ -105,7 +105,7 @@ public class Utils {
 
             Bundle bundle = new Bundle();
             bundle.putString("youtubeId", youtube_id);
-            MainApplication.getFirebaseAnalytics().logEvent("Get Link", bundle);
+            MainApplication.getFirebaseAnalytics().logEvent("GetLink", bundle);
 
             if (conn.getResponseCode() / 100 == 2)
                 result = server + "?id=" + youtube_id + "&type=redirect";

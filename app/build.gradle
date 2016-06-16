@@ -7,8 +7,9 @@ android {
         applicationId "com.kapp.youtube"
         minSdkVersion 16
         targetSdkVersion 23
-        versionCode 6
-        versionName "1.1"
+        versionCode 7
+        versionName "1.1.7"
+        manifestPlaceholders = [HOCKEYAPP_APP_ID: "6f22f99012ba4bb199b97ac6d0115bcc"]
     }
     buildTypes {
         release {
@@ -30,9 +31,8 @@ android {
 
     android.applicationVariants.all { variant ->
         variant.outputs.each { output ->
-            output.versionCodeOverride =
-                    project.ext.versionCodes.get(output.getFilter(
-                            com.android.build.OutputFile.ABI), 0) * 10000000 + android.defaultConfig.versionCode
+            output.versionNameOverride =
+                    "${output.getFilter(com.android.build.OutputFile.ABI)} - Build: ${android.defaultConfig.versionCode}"
         }
     }
 
@@ -45,16 +45,14 @@ android {
 
 
 
-
-
-
 dependencies {
     //compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
     compile project(':materialviewpager')
     compile project(':searchview')
     compile project(':ripple-lib')
-    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile project(':hockeysdk')
+
     compile 'com.android.support:design:23.4.0'
     compile 'com.github.bumptech.glide:glide:3.7.0'
     compile 'com.amulyakhare:com.amulyakhare.textdrawable:1.0.1'

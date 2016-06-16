@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
 
     <application
@@ -14,17 +16,19 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
         >
         <meta-data
-            android:name="xposedmodule"
-            android:value="true" />
-        <meta-data
-            android:name="xposeddescription"
-            android:value="Enable Xposed APIs in this app." />
-        <meta-data
-            android:name="xposedminversion"
-            android:value="53" />
+            android:name="net.hockeyapp.android.appIdentifier"
+            android:value="${HOCKEYAPP_APP_ID}" />
+
+        <activity
+            android:name="net.hockeyapp.android.FeedbackActivity"
+            android:label="Feedback"
+            android:theme="@style/AppBaseTheme" />
+        <activity
+            android:name="net.hockeyapp.android.UpdateActivity"
+            android:label="Updates"
+            android:theme="@style/Theme.AppCompat" />
         <activity
             android:name="com.kapp.youtube.view.activity.MainActivity"
             android:label="@string/app_name"

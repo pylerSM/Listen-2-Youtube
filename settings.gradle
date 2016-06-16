@@ -1,1 +1,1 @@
-include ':app', ':searchview', ':materialviewpager', ':ripple-lib'
+include ':app', ':searchview', ':materialviewpager', ':ripple-lib', ':hockeysdk'
