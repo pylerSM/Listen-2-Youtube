@@ -20,9 +20,4 @@ public class MainApplication extends Application {
         JNILib.init(this);
         Settings.init(this);
     }
-
-//    public static FirebaseAnalytics getFirebaseAnalytics() {
-//        return mFirebaseAnalytics;
-//    }
-
 }

@@ -76,6 +76,8 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
     WifiManager.WifiLock mWifiLock;
     AudioFocusHelper audioFocusHelper;
     AudioManager mAudioManager;
+    private Bitmap albumArt;
+    private Bitmap bigAlbumArt;
 
     enum AudioFocus {
         NoFocusNoDuck,    // we don't have audio focus, and can't duck
@@ -339,7 +341,18 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
     public void onPrepare() {
         notification.flags = Notification.FLAG_ONGOING_EVENT;
         String description, title;
-        Bitmap albumArt, bigAlbumArt;
+        try {
+            if (albumArt != null && !albumArt.isRecycled()) {
+                albumArt.recycle();
+            }
+            if (bigAlbumArt != null && !bigAlbumArt.isRecycled()) {
+                bigAlbumArt.recycle();
+            }
+            System.gc();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         if (playOnline) {
             description = youtubeDataList.get(currentPosition).getDescription();
             title = youtubeDataList.get(currentPosition).getTitle();
@@ -357,7 +370,6 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
         }
         views.setTextViewText(R.id.tvDescription, "Loading...");
         bigViews.setTextViewText(R.id.tvDescription, "Loading...");
-
 
         views.setImageViewBitmap(R.id.ivAlbumArt, albumArt);
         bigViews.setImageViewBitmap(R.id.ivAlbumArt, albumArt);

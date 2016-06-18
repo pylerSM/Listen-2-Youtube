@@ -48,6 +48,7 @@ import com.github.florent37.materialviewpager.MaterialViewPager;
 import com.github.florent37.materialviewpager.MaterialViewPagerAnimator;
 import com.github.florent37.materialviewpager.MaterialViewPagerHelper;
 import com.github.florent37.materialviewpager.header.HeaderDesign;
+import com.kapp.youtube.Constants;
 import com.kapp.youtube.DownloadLibDialog;
 import com.kapp.youtube.R;
 import com.kapp.youtube.Settings;
@@ -313,7 +314,8 @@ public class MainActivity extends AppCompatActivity
 
         /* HOCKEY SDK*/
         FeedbackManager.register(this);
-        MetricsManager.register(this, getApplication());
+        MetricsManager.register(this, getApplication(), Constants.HOCKEY_APP_ID);
+        MetricsManager.enableUserMetrics();
         checkForUpdates();
 
 

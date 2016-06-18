@@ -69,7 +69,7 @@ public class DownloadLibDialog extends DialogFragment {
                     .progress(true, 100)
                     .progressIndeterminateStyle(false)
                     .build();
-            File outputDir = getActivity().getCacheDir();
+            final File outputDir = getActivity().getCacheDir();
             try {
                 final File outputFile = File.createTempFile("libs", "zip", outputDir);
                 bucket.child(arch).child("libs.zip").getFile(outputFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
@@ -93,6 +93,7 @@ public class DownloadLibDialog extends DialogFragment {
                                             public void run() {
                                                 try {
                                                     if (unpackZip(outputFile, JNILib.getLibsFolder())) {
+                                                        outputFile.deleteOnExit();
                                                         setContent("Checking files...");
                                                         if (JNILib.checkJNILibs()) {
                                                             toast("Load media library success.");
@@ -100,8 +101,11 @@ public class DownloadLibDialog extends DialogFragment {
                                                             exitDialog();
                                                         } else
                                                             throw new Exception("Library file incorrect. Please contact developer.");
-                                                    } else
+                                                    } else {
+                                                        outputFile.deleteOnExit();
                                                         throw new Exception("Unzip error");
+                                                    }
+
                                                 } catch (Exception e) {
                                                     exitDialog();
                                                     logException(e, arch, "Upzip");
