@@ -48,8 +48,7 @@ import com.github.florent37.materialviewpager.MaterialViewPager;
 import com.github.florent37.materialviewpager.MaterialViewPagerAnimator;
 import com.github.florent37.materialviewpager.MaterialViewPagerHelper;
 import com.github.florent37.materialviewpager.header.HeaderDesign;
-import com.google.firebase.analytics.FirebaseAnalytics;
-import com.kapp.youtube.MainApplication;
+import com.kapp.youtube.DownloadLibDialog;
 import com.kapp.youtube.R;
 import com.kapp.youtube.Settings;
 import com.kapp.youtube.Utils;
@@ -71,20 +70,23 @@ import com.kapp.youtube.view.fragment.RecyclerViewFragment;
 import com.lapism.searchview.view.SearchCodes;
 import com.lapism.searchview.view.SearchView;
 
+import net.hockeyapp.android.CrashManager;
 import net.hockeyapp.android.FeedbackManager;
+import net.hockeyapp.android.Tracking;
 import net.hockeyapp.android.UpdateManager;
 import net.hockeyapp.android.metrics.MetricsManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.videolan.libvlc.util.JNILib;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, ViewPager.OnPageChangeListener,
-        IPresenterCallback, SearchView.OnQueryTextListener {
+        IPresenterCallback, SearchView.OnQueryTextListener, DownloadLibDialog.OnDownloadLibDialogDismiss {
     public static final String SEARCH_ONLINE_TITLE = "Search Online", LOCAL_FILE_TITLE = "Downloaded files",
             PLAY_LISTS = "Play lists";
     public static final String SEARCH_VIEW_KEY = "Search View", DRAWER_OPENED_KEY = "Drawer Opened",
@@ -198,7 +200,11 @@ public class MainActivity extends AppCompatActivity
             if (savedInstanceState.getBoolean(DRAWER_OPENED_KEY, false))
                 drawer.openDrawer(GravityCompat.START);
             currentTabIndex = savedInstanceState.getInt(CURRENT_TAB_INDEX_KEY, 0);
-        }
+        } else if (!JNILib.checkJNILibs()) {
+            if (grantedPermission)
+                showDownloadLibsDialog();
+        } else
+            bindPlaybackService();
 
         // Test
 
@@ -300,6 +306,20 @@ public class MainActivity extends AppCompatActivity
                 true,
                 observer);
 
+
+        mWebView = new WebView(this);
+        mWebView.setWebChromeClient(new WebChromeClient());
+        mWebView.getSettings().setJavaScriptEnabled(true);
+
+        /* HOCKEY SDK*/
+        FeedbackManager.register(this);
+        MetricsManager.register(this, getApplication());
+        checkForUpdates();
+
+
+    }
+
+    private void bindPlaybackService() {
         Intent intent = new Intent(this, PlaybackService.class);
         intent.setAction(PlaybackService.ACTION_DO_NOTHING);
         startService(intent);
@@ -315,21 +335,22 @@ public class MainActivity extends AppCompatActivity
             }
         };
         bindService(intent, serviceConnection, BIND_AUTO_CREATE);
-
-        mWebView = new WebView(this);
-        mWebView.setWebChromeClient(new WebChromeClient());
-        mWebView.getSettings().setJavaScriptEnabled(true);
-
-        /* HOCKEY SDK*/
-        FeedbackManager.register(this);
-        MetricsManager.register(this, getApplication());
-        checkForUpdates();
     }
 
     private void onCardViewClick(View view, int position, int fragmentId) {
         Log.d(TAG, "onCardViewClick - line 288: " + fragmentId + " pos " + position);
         switch (fragmentId) {
             case SEARCH_ONLINE_TAB:
+                if (!grantedPermission) {
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{"android.permission.WRITE_EXTERNAL_STORAGE"},
+                            REQUEST_CODE);
+                    break;
+                }
+                if (!JNILib.checkJNILibs()) {
+                    showDownloadLibsDialog();
+                    break;
+                }
                 YoutubeData data = searchOnlineAdapter.getData(position);
                 flagCheckFetchRelatedVideoCallback = data.id;
                 List<YoutubeData> youtubeDatas = new ArrayList<>();
@@ -340,6 +361,16 @@ public class MainActivity extends AppCompatActivity
                     new FetchRelatedVideo(JOB_TYPE_FETCH_RELATED_VIDEO, this).execute(data);
                 break;
             case LOCAL_FILE_TAB:
+                if (!grantedPermission) {
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{"android.permission.WRITE_EXTERNAL_STORAGE"},
+                            REQUEST_CODE);
+                    break;
+                }
+                if (!JNILib.checkJNILibs()) {
+                    showDownloadLibsDialog();
+                    break;
+                }
                 if (playbackService != null)
                     playbackService.playLocalFile(localFileAdapter.getDataList(), position);
                 break;
@@ -360,6 +391,16 @@ public class MainActivity extends AppCompatActivity
                                         playListAdapter.getData(position - 1).getTitle());
                     }
                 } else {
+                    if (!grantedPermission) {
+                        ActivityCompat.requestPermissions(this,
+                                new String[]{"android.permission.WRITE_EXTERNAL_STORAGE"},
+                                REQUEST_CODE);
+                        break;
+                    }
+                    if (!JNILib.checkJNILibs()) {
+                        showDownloadLibsDialog();
+                        break;
+                    }
                     if (playbackService != null)
                         playbackService.playLocalFile(
                                 playListAdapter.getData(playListAdapter.getSelectingPlaylist()).items,
@@ -395,6 +436,23 @@ public class MainActivity extends AppCompatActivity
                 }
                 break;
         }
+    }
+
+    private void showDownloadLibsDialog() {
+        new MaterialDialog.Builder(this)
+                .title("Media library file does not found")
+                .content("Require media codec files to start Playback Service.\n" +
+                        "Do you want to download it now (10MB)? Just a moment.")
+                .positiveText("Download")
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        new DownloadLibDialog().show(getSupportFragmentManager(), "DownloadLibDialog");
+                    }
+                })
+                .negativeText("Later")
+                .build()
+                .show();
     }
 
     private void showPopupPlaylist(View view, int position) {
@@ -482,9 +540,7 @@ public class MainActivity extends AppCompatActivity
                     } else
                         Toast.makeText(MainActivity.this, "Create " + playlistName + " playlist have an error.", Toast.LENGTH_SHORT).show();
                     dialog.cancel();
-                    Bundle bundle = new Bundle();
-                    bundle.putString("playListName", playlistName);
-                    MainApplication.getFirebaseAnalytics().logEvent("CreatePlayList", bundle);
+                    MetricsManager.trackEvent("CreatePlayList");
                 }
             }
         });
@@ -520,8 +576,10 @@ public class MainActivity extends AppCompatActivity
         super.onDestroy();
         getContentResolver().unregisterContentObserver(observer);
         Log.d(TAG, "onDestroy - line 461: ");
-        unbindService(serviceConnection);
-        unregisterManagers();
+        if (serviceConnection != null) {
+            unbindService(serviceConnection);
+            unregisterManagers();
+        }
     }
 
     @Override
@@ -548,9 +606,7 @@ public class MainActivity extends AppCompatActivity
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                Bundle bundle = new Bundle();
-                bundle.putInt("Share", 1);
-                MainApplication.getFirebaseAnalytics().logEvent(FirebaseAnalytics.Event.SHARE, bundle);
+                MetricsManager.trackEvent("Share");
                 break;
             case R.id.nav_feedback:
                 FeedbackManager.showFeedbackActivity(MainActivity.this);
@@ -724,10 +780,7 @@ public class MainActivity extends AppCompatActivity
                                     @Override
                                     public void onClick(@NonNull final MaterialDialog dialog, @NonNull DialogAction which) {
                                         int index = dialog.getSelectedIndex();
-                                        Bundle bundle = new Bundle();
-                                        bundle.putString("type", items.get(0));
-                                        bundle.putString("title", title);
-                                        MainApplication.getFirebaseAnalytics().logEvent("Download", bundle);
+                                        MetricsManager.trackEvent("Download");
                                         if (index == 0) {
                                             final ProgressDialog convertMp3Dialog = ProgressDialog.show(MainActivity.this, "", "Converting to mp3...");
                                             convertMp3Dialog.setCancelable(true);
@@ -805,9 +858,7 @@ public class MainActivity extends AppCompatActivity
                 searchOnlineAdapter.removeAll();
                 progressDialog = ProgressDialog.show(this, null, "Search in progress...");
                 new YoutubeQuery(JOB_TYPE_SEARCH, this).execute(query, null);
-                Bundle bundle = new Bundle();
-                bundle.putString(FirebaseAnalytics.Param.VALUE, query);
-                MainApplication.getFirebaseAnalytics().logEvent(FirebaseAnalytics.Event.SEARCH, bundle);
+                MetricsManager.trackEvent("Search");
                 break;
             case LOCAL_FILE_TAB:
                 progressDialog = ProgressDialog.show(this, null, "Search in progress...");
@@ -834,6 +885,8 @@ public class MainActivity extends AppCompatActivity
         if (requestCode == REQUEST_CODE) {
             grantedPermission = Utils.checkPermissions(this);
             if (grantedPermission) {
+                if (!JNILib.checkJNILibs())
+                    showDownloadLibsDialog();
                 new FetchLocalFileList(this, JOB_TYPE_FETCH_LOCAL_FILE, this).execute();
                 new FetchPlayList(this, JOB_TYPE_FETCH_PLAY_LIST, this).execute();
             } else
@@ -845,6 +898,14 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
         unregisterManagers();
+        Tracking.stopUsage(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        CrashManager.register(this);
+        Tracking.startUsage(this);
     }
 
     private void checkForUpdates() {
@@ -854,6 +915,13 @@ public class MainActivity extends AppCompatActivity
 
     private void unregisterManagers() {
         UpdateManager.unregister();
+    }
+
+    @Override
+    public void onDismiss(DownloadLibDialog dialog) {
+        dialog.dismiss();
+        if (JNILib.checkJNILibs() && playbackService == null)
+            bindPlaybackService();
     }
 
     private class MusicStoreObserver extends ContentObserver {

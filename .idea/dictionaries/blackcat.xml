@@ -2,6 +2,11 @@
   <dictionary name="blackcat">
     <words>
       <w>github</w>
+      <w>libanw</w>
+      <w>libcompat</w>
+      <w>libiomx</w>
+      <w>libvlc</w>
+      <w>libvlcjni</w>
     </words>
   </dictionary>
 </component>

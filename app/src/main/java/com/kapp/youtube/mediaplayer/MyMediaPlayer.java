@@ -25,13 +25,15 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
 
     public static LibVLC sLibVLC;
 
-    static {
-        ArrayList<String> options = new ArrayList<>();
-        options.add("--http-reconnect");
-        options.add("--network-caching=6000");
-        options.add("--no-video");
-        sLibVLC = new LibVLC(options);
-        sMediaPlayer = new MediaPlayer(sLibVLC);
+    static LibVLC getLibVLC() {
+        if (sLibVLC == null) {
+            ArrayList<String> options = new ArrayList<>();
+            options.add("--http-reconnect");
+            options.add("--network-caching=6000");
+            options.add("--no-video");
+            sLibVLC = new LibVLC(options);
+        }
+        return sLibVLC;
     }
 
     private PlaybackStatus status = PlaybackStatus.STOPPED;
@@ -39,7 +41,7 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
     private int flag = 0;
 
     public MyMediaPlayer() {
-        sMediaPlayer = new MediaPlayer(sLibVLC);
+        sMediaPlayer = new MediaPlayer(getLibVLC());
         sMediaPlayer.setEventListener(this);
     }
 
@@ -50,7 +52,7 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
             setStatus(PlaybackStatus.PREPARING);
         sMediaPlayer.stop();
         if (sMediaPlayer.getMedia() == null || !uri.equals(sMediaPlayer.getMedia().getUri())) {
-            Media media = new Media(sLibVLC, uri);
+            Media media = new Media(getLibVLC(), uri);
             sMediaPlayer.setMedia(media);
         } else
             Log.d(TAG, "prepareWithUri - line 57: REUSE current ");
@@ -61,7 +63,7 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
     private void prepareNoPlay(Uri uri) {
         sMediaPlayer.stop();
         if (sMediaPlayer.getMedia() == null || !uri.equals(sMediaPlayer.getMedia().getUri())) {
-            Media media = new Media(sLibVLC, uri);
+            Media media = new Media(getLibVLC(), uri);
             sMediaPlayer.setMedia(media);
         } else
             Log.d(TAG, "prepareWithUri - line 57: REUSE current ");

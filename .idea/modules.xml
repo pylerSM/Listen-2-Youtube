@@ -8,6 +8,7 @@
       <module fileurl="file://$PROJECT_DIR$/materialviewpager/materialviewpager.iml" filepath="$PROJECT_DIR$/materialviewpager/materialviewpager.iml" />
       <module fileurl="file://$PROJECT_DIR$/ripple-lib/ripple-lib.iml" filepath="$PROJECT_DIR$/ripple-lib/ripple-lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/searchview/searchview.iml" filepath="$PROJECT_DIR$/searchview/searchview.iml" />
+      <module fileurl="file://$PROJECT_DIR$/vlc-android-sdk/vlc-android-sdk.iml" filepath="$PROJECT_DIR$/vlc-android-sdk/vlc-android-sdk.iml" />
     </modules>
   </component>
 </project>

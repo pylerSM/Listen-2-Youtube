@@ -10,14 +10,12 @@ import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.kapp.youtube.MainApplication;
 import com.kapp.youtube.R;
 import com.kapp.youtube.Settings;
 import com.kapp.youtube.Utils;
@@ -26,6 +24,8 @@ import com.thin.downloadmanager.DefaultRetryPolicy;
 import com.thin.downloadmanager.DownloadRequest;
 import com.thin.downloadmanager.DownloadStatusListenerV1;
 import com.thin.downloadmanager.ThinDownloadManager;
+
+import net.hockeyapp.android.metrics.MetricsManager;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -281,13 +281,13 @@ public class DownloadService extends Service {
                 .setAutoCancel(true)
                 .setSmallIcon(R.drawable.ic_action_download)
                 .setContentTitle(downloadingTaskInfo.title);
-        if (error)
+        if (error) {
             mBuilder.setContentText("Error: " + message);
+            MetricsManager.trackEvent("DownloadError");
+        }
         else {
             mBuilder.setContentText("Download completed");
-            Bundle bundle = new Bundle();
-            bundle.putString("file", downloadingTaskInfo.title);
-            MainApplication.getFirebaseAnalytics().logEvent("DownloadSuccess", bundle);
+            MetricsManager.trackEvent("DownloadSuccess");
         }
         notificationManager.notify(++notificationId, mBuilder.build());
         if (!error) {

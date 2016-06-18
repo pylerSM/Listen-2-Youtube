@@ -3,7 +3,7 @@ package com.kapp.youtube;
 import android.app.Application;
 import android.content.Context;
 
-import com.google.firebase.analytics.FirebaseAnalytics;
+import org.videolan.libvlc.util.JNILib;
 
 /**
  * Created by khang on 18/04/2016.
@@ -12,18 +12,17 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 public class MainApplication extends Application {
     private static final String TAG = "MainApplication";
     public static Context applicationContext;
-    private static FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     public void onCreate() {
         super.onCreate();
         applicationContext = this;
+        JNILib.init(this);
         Settings.init(this);
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
     }
 
-    public static FirebaseAnalytics getFirebaseAnalytics() {
-        return mFirebaseAnalytics;
-    }
+//    public static FirebaseAnalytics getFirebaseAnalytics() {
+//        return mFirebaseAnalytics;
+//    }
 
 }
