@@ -183,6 +183,18 @@ public class DownloadLibDialog extends DialogFragment {
             });
     }
 
+
+    @Override
+    public void dismiss() {
+        if (getDialog() != null && getDialog().isShowing() && isResumed()) {
+            try {
+                super.dismiss();
+            } catch (IllegalArgumentException e) {
+                Log.e("DownloadLibDialog", "Error dismissing");
+            }
+        }
+    }
+
     private byte[] createChecksum(File filename) throws Exception {
         InputStream fis = new FileInputStream(filename);
 
