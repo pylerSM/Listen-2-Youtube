@@ -3,6 +3,7 @@
 ![Screenshots](http://i.imgur.com/NVxlZ6W.png?1)
 # Downloads:
   * For all devices: [https://goo.gl/bjqfrT](https://goo.gl/bjqfrT)
+  * XDA 4rum: [http://goo.gl/b9RIj9](http://goo.gl/b9RIj9)
   * XDA Lab: Search "Youtube music"
 
 ![Imgur](https://i.imgur.com/RfQhnjam.png?1) ![Land Screenshot](https://i.imgur.com/3Qs7z1C.png?1)
