@@ -78,8 +78,11 @@ public class RecyclerViewFragment extends Fragment {
                 @Override
                 public void run() {
                     Log.e("TAG", "run - line 75: Handler().postDelayed");
-                    final int scrollToPosition = savedInstanceState.getInt(LAYOUT_MANAGER_STATE, 0);
-                    layoutManager.smoothScrollToPosition(mRecyclerView, null ,scrollToPosition);
+                    try {
+                        final int scrollToPosition = savedInstanceState.getInt(LAYOUT_MANAGER_STATE, 0);
+                        layoutManager.smoothScrollToPosition(mRecyclerView, null, scrollToPosition);
+                    } catch (Exception e) {
+                    }
                 }
             }, 500);
 

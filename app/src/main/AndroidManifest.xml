@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="com.amazon.tv.permission.LAUNCHER_SETTINGS" />
 
     <permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
 
@@ -127,7 +128,7 @@
 
         <activity
             android:name=".view.activity.ListenInBackground"
-            android:theme="@style/Theme.AppCompat.Translucent"
+            android:theme="@style/AppTranslucent"
             android:icon="@mipmap/ic_launcher"
             android:label="ListenInBackground">
 
@@ -157,7 +158,7 @@
         </activity>
         <activity
             android:name=".view.activity.DownloadOffline"
-            android:theme="@style/Theme.AppCompat.Translucent"
+            android:theme="@style/AppTranslucent"
             android:icon="@mipmap/ic_launcher"
             android:label="DownloadOffline">
 

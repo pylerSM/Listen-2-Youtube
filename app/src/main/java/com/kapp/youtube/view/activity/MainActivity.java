@@ -2,6 +2,7 @@ package com.kapp.youtube.view.activity;
 
 import android.annotation.TargetApi;
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
@@ -103,6 +104,7 @@ public class MainActivity extends AppCompatActivity
     public static final int SEARCH_ONLINE_TAB = 0, LOCAL_FILE_TAB = 1, PLAY_LIST_TAB = 2;
     private static final String TAG = "MainActivity";
     public static final int REQUEST_CODE = 0;
+    private static final String TUTORIAL_VIDEO = "";
     SearchView searchView;
     RecyclerViewFragment searchOnlineFragment, localFileFragment, playListFragment;
     private DrawerLayout drawer;
@@ -320,7 +322,41 @@ public class MainActivity extends AppCompatActivity
         MetricsManager.enableUserMetrics();
         checkForUpdates();
 
+        /* Open tutorial */
+        checkFirstOpen();
+    }
 
+    private void checkFirstOpen() {
+        if (Settings.isFirstOpen()) {
+            MaterialDialog dialog = new MaterialDialog.Builder(this)
+                    .cancelable(false)
+                    .autoDismiss(true)
+                    .title("Features")
+                    .content("You can use this app to listen/download videos directly from YouTube and web browser.")
+                    .positiveText("Tutorial")
+                    .onPositive(new MaterialDialog.SingleButtonCallback() {
+                        @Override
+                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                            try {
+                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + TUTORIAL_VIDEO));
+                                startActivity(intent);
+                            } catch (ActivityNotFoundException ex) {
+                                Intent intent = new Intent(Intent.ACTION_VIEW,
+                                        Uri.parse("http://www.youtube.com/watch?v=" + TUTORIAL_VIDEO));
+                                startActivity(intent);
+                            }
+                        }
+                    })
+                    .negativeText("Skip")
+                    .onAny(new MaterialDialog.SingleButtonCallback() {
+                        @Override
+                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                            Settings.setFirstOpen(false);
+                        }
+                    })
+                    .build();
+            dialog.show();
+        }
     }
 
     private void bindPlaybackService() {
@@ -451,7 +487,11 @@ public class MainActivity extends AppCompatActivity
                 .onPositive(new MaterialDialog.SingleButtonCallback() {
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                        new DownloadLibDialog().show(getSupportFragmentManager(), "DownloadLibDialog");
+                        try {
+                            new DownloadLibDialog().show(getSupportFragmentManager(), "DownloadLibDialog");
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, "Oops! An error occurred. Please try again.", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 })
                 .negativeText("Later")
@@ -627,7 +667,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        //super.onSaveInstanceState(outState);
+        super.onSaveInstanceState(outState);
         outState.putParcelable(SEARCH_VIEW_KEY, searchView.onSaveInstanceState());
         outState.putBoolean(DRAWER_OPENED_KEY, drawer.isDrawerOpen(GravityCompat.START));
         outState.putInt(CURRENT_TAB_INDEX_KEY, currentTabIndex);
@@ -708,12 +748,15 @@ public class MainActivity extends AppCompatActivity
                 if (result != null) {
                     YoutubeQuery.ResultValue resultValue = (YoutubeQuery.ResultValue) result;
                     searchOnlineAdapter.changeDataList(resultValue.list, false);
-                    MaterialViewPagerAnimator animator = MaterialViewPagerHelper.getAnimator(this);
-                    animator.setScrollOffset(
-                            searchOnlineFragment.getRecyclerView(),
-                            0
-                    );
-                    animator.onViewPagerPageChanged();
+                    try {
+                        MaterialViewPagerAnimator animator = MaterialViewPagerHelper.getAnimator(this);
+                        animator.setScrollOffset(
+                                searchOnlineFragment.getRecyclerView(),
+                                0
+                        );
+                        animator.onViewPagerPageChanged();
+                    } catch (Exception e) {
+                    }
                     nextPageToken = resultValue.after;
                 } else
                     Toast.makeText(MainActivity.this, "Search error, please try again.", Toast.LENGTH_SHORT).show();
@@ -760,7 +803,7 @@ public class MainActivity extends AppCompatActivity
                                 urls = new ArrayList<>(), extensions = new ArrayList<>();
                         urls.add(audio.getString("url"));
                         extensions.add(audio.getString("extension"));
-                        items.add("Audio@mp3 - " + audio.getString("bitrate"));
+                        items.add("Audio@mp3 - 320k");
                         items.add("Audio@" + audio.getString("extension") + " - " + audio.getString("bitrate"));
                         final JSONArray videos = jsonObject.getJSONArray("videos");
                         for (int i = 0; i < videos.length(); i++) {

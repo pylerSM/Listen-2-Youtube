@@ -8,7 +8,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 23
         versionCode 8
-        versionName "1.1.8"
+        versionName "1.1.9"
         manifestPlaceholders = [HOCKEYAPP_APP_ID: "6f22f99012ba4bb199b97ac6d0115bcc"]
     }
     buildTypes {

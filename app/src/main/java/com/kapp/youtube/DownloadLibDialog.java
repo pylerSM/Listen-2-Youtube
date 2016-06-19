@@ -93,7 +93,10 @@ public class DownloadLibDialog extends DialogFragment {
                                             public void run() {
                                                 try {
                                                     if (unpackZip(outputFile, JNILib.getLibsFolder())) {
-                                                        outputFile.deleteOnExit();
+                                                        try {
+                                                            outputFile.delete();
+                                                        } catch (Exception e) {
+                                                        }
                                                         setContent("Checking files...");
                                                         if (JNILib.checkJNILibs()) {
                                                             toast("Load media library success.");
@@ -263,7 +266,7 @@ public class DownloadLibDialog extends DialogFragment {
             }
 
             zis.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }

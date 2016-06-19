@@ -10,7 +10,6 @@ import android.os.IBinder;
 import android.widget.Toast;
 
 import com.kapp.youtube.Constants;
-import com.kapp.youtube.R;
 import com.kapp.youtube.Settings;
 import com.kapp.youtube.model.YoutubeData;
 import com.kapp.youtube.presenter.FetchRelatedVideo;
@@ -33,6 +32,7 @@ public class ListenInBackground extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        overridePendingTransition(0, 0);
         if (!JNILib.checkJNILibs()) {
             Toast.makeText(ListenInBackground.this, "Please open app and download media library first!", Toast.LENGTH_LONG).show();
             finish();
@@ -44,7 +44,7 @@ public class ListenInBackground extends Activity {
 
         String action = getIntent().getAction();
         if (action != null) {
-            setContentView(R.layout.waiting_layout);
+            //setContentView(R.layout.waiting_layout);
             String youtubeId = null;
             String title = null;
             if (action.equals(Intent.ACTION_SEND)) {

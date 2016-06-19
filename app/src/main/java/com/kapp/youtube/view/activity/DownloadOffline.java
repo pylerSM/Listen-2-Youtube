@@ -48,6 +48,7 @@ public class DownloadOffline extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        overridePendingTransition(0, 0);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             grantedPermission = Utils.checkPermissions(this);
         if (!grantedPermission) {
@@ -107,7 +108,7 @@ public class DownloadOffline extends Activity {
                                 urls = new ArrayList<>(), extensions = new ArrayList<>();
                         urls.add(audio.getString("url"));
                         extensions.add(audio.getString("extension"));
-                        items.add("Audio@mp3 - " + audio.getString("bitrate"));
+                        items.add("Audio@mp3 - 320k");
                         items.add("Audio@" + audio.getString("extension") + " - " + audio.getString("bitrate"));
                         final JSONArray videos = jsonObject.getJSONArray("videos");
                         for (int i = 0; i < videos.length(); i++) {

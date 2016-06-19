@@ -20,6 +20,7 @@ public class Settings {
             SEARCH_ONLY_MUSIC_VIDEO = "SEARCH_ONLY_MUSIC_VIDEO";
     public static final String IS_AUTO_PLAY = "IS_AUTO_PLAY";
     public static final String DEVICE_KEY = "DEVICE_KEY";
+    public static final String FIRST_OPEN = "FIRST_OPEN";
     private static Context context;
 
     public static void init(Context ctx) {
@@ -73,4 +74,12 @@ public class Settings {
         return getSharedPreferences().getBoolean(IS_AUTO_PLAY, true);
     }
 
+    public static boolean isFirstOpen() {
+        return getSharedPreferences().getBoolean(FIRST_OPEN, true);
+    }
+
+    public static void setFirstOpen(boolean v) {
+        getSharedPreferences().edit().putBoolean(FIRST_OPEN, v)
+                .apply();
+    }
 }

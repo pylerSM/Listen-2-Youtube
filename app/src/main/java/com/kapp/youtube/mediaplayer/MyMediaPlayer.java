@@ -69,6 +69,7 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
         if (sMediaPlayer.getMedia() == null || !uri.equals(sMediaPlayer.getMedia().getUri())) {
             Media media = new Media(getLibVLC(), uri);
             sMediaPlayer.setMedia(media);
+            sMediaPlayer.pause();
         } else
             Log.d(TAG, "prepareWithUri - line 57: REUSE current ");
     }
@@ -83,23 +84,23 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
     public void play() {
         Log.d(TAG, "play - line 54: PLAY");
         if (!isPlaying() && sMediaPlayer.getMedia() != null) {
-            sMediaPlayer.play();
             setStatus(PlaybackStatus.PLAYING);
+            sMediaPlayer.play();
         }
     }
 
     public void pause() {
         if (isPlaying()) {
-            sMediaPlayer.pause();
             setStatus(PlaybackStatus.PAUSED);
+            sMediaPlayer.pause();
         }
     }
 
     public void stop() {
         flag++;
         if (!isStopped()) {
-            sMediaPlayer.stop();
             setStatus(PlaybackStatus.STOPPED);
+            sMediaPlayer.stop();
         }
     }
 
