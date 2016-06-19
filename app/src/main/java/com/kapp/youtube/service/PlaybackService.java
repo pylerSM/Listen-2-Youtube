@@ -99,7 +99,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
     @Override
     public void onCreate() {
         super.onCreate();
-        mediaPlayer = new MyMediaPlayer();
+        mediaPlayer = new MyMediaPlayer(this);
         mediaPlayer.setListener(this);
         localFileDataList = new ArrayList<>();
         youtubeDataList = new ArrayList<>();
@@ -341,31 +341,31 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
     public void onPrepare() {
         notification.flags = Notification.FLAG_ONGOING_EVENT;
         String description, title;
-        try {
-            if (albumArt != null && !albumArt.isRecycled()) {
-                albumArt.recycle();
-            }
-            if (bigAlbumArt != null && !bigAlbumArt.isRecycled()) {
-                bigAlbumArt.recycle();
-            }
-            System.gc();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            if (albumArt != null && !albumArt.isRecycled()) {
+//                albumArt.recycle();
+//            }
+//            if (bigAlbumArt != null && !bigAlbumArt.isRecycled()) {
+//                bigAlbumArt.recycle();
+//            }
+//            System.gc();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
         if (playOnline) {
             description = youtubeDataList.get(currentPosition).getDescription();
             title = youtubeDataList.get(currentPosition).getTitle();
             views.setTextViewText(R.id.tvTitle, title);
             bigViews.setTextViewText(R.id.tvTitle, title);
-            albumArt = youtubeDataList.get(currentPosition).getIconAsBitmap(500);
+            albumArt = youtubeDataList.get(currentPosition).getIconAsBitmap(200);
             bigAlbumArt = youtubeDataList.get(currentPosition).getIconAsBitmap(1500);
         } else {
             description = localFileDataList.get(currentPosition).getDescription();
             title = localFileDataList.get(currentPosition).getTitle();
             views.setTextViewText(R.id.tvTitle, title);
             bigViews.setTextViewText(R.id.tvTitle, title);
-            albumArt = localFileDataList.get(currentPosition).getIconAsBitmap(500);
+            albumArt = localFileDataList.get(currentPosition).getIconAsBitmap(200);
             bigAlbumArt = localFileDataList.get(currentPosition).getIconAsBitmap(1500);
         }
         views.setTextViewText(R.id.tvDescription, "Loading...");

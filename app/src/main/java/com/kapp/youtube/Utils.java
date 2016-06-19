@@ -97,15 +97,17 @@ public class Utils {
             URL url = new URL(server + "?id=" + youtube_id + "&type=redirect");
             HttpURLConnection tmp = (HttpURLConnection) url.openConnection();
             tmp.setInstanceFollowRedirects(false);
-            URL secondURL = new URL(tmp.getHeaderField("Location"));
-            HttpURLConnection conn = (HttpURLConnection) secondURL.openConnection();
+            if (tmp.getHeaderField("Location") != null) {
+                URL secondURL = new URL(tmp.getHeaderField("Location"));
+                HttpURLConnection conn = (HttpURLConnection) secondURL.openConnection();
 
-            Log.e(TAG, "getLinkAsync - line 36: ucon.getResponseCode() " + conn.getResponseCode());
+                Log.e(TAG, "getLinkAsync - line 36: ucon.getResponseCode() " + conn.getResponseCode());
 
-            if (conn.getResponseCode() / 100 == 2)
-                result = server + "?id=" + youtube_id + "&type=redirect";
-            else {
-                result = server + "?id=" + youtube_id;
+                if (conn.getResponseCode() / 100 == 2)
+                    result = server + "?id=" + youtube_id + "&type=redirect";
+                else {
+                    result = server + "?id=" + youtube_id;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

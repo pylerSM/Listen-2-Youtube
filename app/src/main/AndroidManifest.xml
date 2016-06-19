@@ -124,6 +124,67 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".view.activity.ListenInBackground"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:icon="@mipmap/ic_launcher"
+            android:label="ListenInBackground">
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/*" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="*.youtube.com"
+                    android:pathPrefix="/watch"
+                    android:scheme="http" />
+                <data
+                    android:host="*.youtube.com"
+                    android:pathPrefix="/watch"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".view.activity.DownloadOffline"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:icon="@mipmap/ic_launcher"
+            android:label="DownloadOffline">
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/*" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="*.youtube.com"
+                    android:pathPrefix="/watch"
+                    android:scheme="http" />
+                <data
+                    android:host="*.youtube.com"
+                    android:pathPrefix="/watch"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

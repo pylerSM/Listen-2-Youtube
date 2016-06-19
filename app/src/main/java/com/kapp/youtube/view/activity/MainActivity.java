@@ -82,6 +82,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.videolan.libvlc.util.JNILib;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -625,7 +627,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
+        //super.onSaveInstanceState(outState);
         outState.putParcelable(SEARCH_VIEW_KEY, searchView.onSaveInstanceState());
         outState.putBoolean(DRAWER_OPENED_KEY, drawer.isDrawerOpen(GravityCompat.START));
         outState.putInt(CURRENT_TAB_INDEX_KEY, currentTabIndex);
@@ -796,7 +798,12 @@ public class MainActivity extends AppCompatActivity
                                                         Uri uri = Uri.parse(url);
                                                         String server = uri.getQueryParameters("server").get(0);
                                                         String hash = uri.getQueryParameters("hash").get(0);
-                                                        String file = uri.getQueryParameters("file").get(0);
+                                                        String file = null;
+                                                        try {
+                                                            file = URLEncoder.encode(uri.getQueryParameters("file").get(0), "utf-8");
+                                                        } catch (UnsupportedEncodingException e) {
+                                                            e.printStackTrace();
+                                                        }
                                                         Intent intent = new Intent(MainActivity.this, DownloadService.class);
                                                         intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
                                                         intent.putExtra(DownloadService.URL, String.format("http://%s.listentoyoutube.com/download/%s/%s", server, hash, file));
@@ -834,17 +841,21 @@ public class MainActivity extends AppCompatActivity
                                 }).build();
                         dialog.show();
                     } catch (JSONException e) {
-                        Toast.makeText(MainActivity.this, "Fetch urls error, please try again.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Fetch urls error.", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Toast.makeText(MainActivity.this, "Fetch urls error, please try again.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Fetch urls error by some reasons:\n" +
+                            "- Your network connectivity\n" +
+                            "- Video not available for US", Toast.LENGTH_LONG).show();
                 }
                 break;
             case JOB_TYPE_FETCH_RELATED_VIDEO:
-                List<YoutubeData> youtubeDatas = (List<YoutubeData>) result;
-                if (playbackService != null &&
-                        youtubeDatas.get(0).id.equals(flagCheckFetchRelatedVideoCallback))
-                    playbackService.playYoutubeList(youtubeDatas, false);
+                if (result != null) {
+                    List<YoutubeData> youtubeDatas = (List<YoutubeData>) result;
+                    if (playbackService != null &&
+                            youtubeDatas.get(0).id.equals(flagCheckFetchRelatedVideoCallback))
+                        playbackService.playYoutubeList(youtubeDatas, false);
+                }
         }
     }
 

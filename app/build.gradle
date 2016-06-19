@@ -28,14 +28,12 @@ android {
 
 
 dependencies {
-    //compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
     compile project(':materialviewpager')
     compile project(':searchview')
     compile project(':ripple-lib')
     compile project(':hockeysdk')
     compile project(':vlc-android-sdk')
-
     compile 'com.android.support:design:23.4.0'
     compile 'com.github.bumptech.glide:glide:3.7.0'
     compile 'com.amulyakhare:com.amulyakhare.textdrawable:1.0.1'

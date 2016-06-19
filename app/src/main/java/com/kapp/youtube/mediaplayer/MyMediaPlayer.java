@@ -1,7 +1,9 @@
 package com.kapp.youtube.mediaplayer;
 
+import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.kapp.youtube.presenter.GetLink;
 import com.kapp.youtube.presenter.IPresenterCallback;
@@ -24,6 +26,7 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
     private static MediaPlayer sMediaPlayer;
 
     public static LibVLC sLibVLC;
+    private Context mContext;
 
     static LibVLC getLibVLC() {
         if (sLibVLC == null) {
@@ -40,9 +43,10 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
     private PlaybackListener listener;
     private int flag = 0;
 
-    public MyMediaPlayer() {
+    public MyMediaPlayer(Context mContext) {
         sMediaPlayer = new MediaPlayer(getLibVLC());
         sMediaPlayer.setEventListener(this);
+        this.mContext = mContext;
     }
 
     public void prepareWithUri(Uri uri) {
@@ -219,7 +223,9 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
                 }
 
             } else {
-                Log.d(TAG, "onFinish - line 158: PREPARE error, url null, stop media player");
+                Toast.makeText(mContext, "Get sound stream error by some reasons:\n" +
+                        "- Your network connectivity\n" +
+                        "- Video not available for US", Toast.LENGTH_LONG).show();
                 stop();
             }
         }
