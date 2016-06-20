@@ -25,8 +25,6 @@ import com.thin.downloadmanager.DownloadRequest;
 import com.thin.downloadmanager.DownloadStatusListenerV1;
 import com.thin.downloadmanager.ThinDownloadManager;
 
-import net.hockeyapp.android.metrics.MetricsManager;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -283,11 +281,11 @@ public class DownloadService extends Service {
                 .setContentTitle(downloadingTaskInfo.title);
         if (error) {
             mBuilder.setContentText("Error: " + message);
-            MetricsManager.trackEvent("DownloadError");
+            Utils.logEvent("download_error");
         }
         else {
             mBuilder.setContentText("Download completed");
-            MetricsManager.trackEvent("DownloadSuccess");
+            Utils.logEvent("download_success");
         }
         notificationManager.notify(++notificationId, mBuilder.build());
         if (!error) {

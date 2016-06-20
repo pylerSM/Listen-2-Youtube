@@ -7,14 +7,15 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.kapp.youtube.model.LocalFileData;
 
 import org.json.JSONException;
@@ -133,22 +134,10 @@ public class Utils {
     }
 
 
-    public static Bitmap drawableToBitmap(Drawable drawable, int size) {
-        Bitmap bitmap;
-
-        if (drawable instanceof BitmapDrawable) {
-            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-            if(bitmapDrawable.getBitmap() != null) {
-                return bitmapDrawable.getBitmap();
-            }
-        }
-
-        bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-
-        Canvas canvas = new Canvas(bitmap);
+    public static void drawableToBitmap(Drawable drawable, Bitmap outBitmap) {
+        Canvas canvas = new Canvas(outBitmap);
         drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         drawable.draw(canvas);
-        return bitmap;
     }
 
     public static boolean checkPermissions(Context context) {
@@ -166,5 +155,11 @@ public class Utils {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    public static void logEvent(String event) {
+        Bundle bundle = new Bundle();
+        bundle.putInt(FirebaseAnalytics.Param.VALUE, Settings.increaseTime(event));
+        MainApplication.getAnalytics().logEvent(event, bundle);
     }
 }

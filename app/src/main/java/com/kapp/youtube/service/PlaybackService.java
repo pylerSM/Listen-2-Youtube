@@ -38,8 +38,6 @@ import com.kapp.youtube.model.LocalFileData;
 import com.kapp.youtube.model.YoutubeData;
 import com.kapp.youtube.view.activity.MainActivity;
 
-import net.hockeyapp.android.metrics.MetricsManager;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -99,6 +97,11 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
     @Override
     public void onCreate() {
         super.onCreate();
+
+        /* Init album art */
+        albumArt = Bitmap.createBitmap(200, 200, Bitmap.Config.ARGB_8888);
+        bigAlbumArt = Bitmap.createBitmap(1500, 1500, Bitmap.Config.ARGB_8888);
+
         mediaPlayer = new MyMediaPlayer(this);
         mediaPlayer.setListener(this);
         localFileDataList = new ArrayList<>();
@@ -170,6 +173,18 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
         localFileDataList = null;
         youtubeDataList = null;
         audioFocusHelper = null;
+
+        try {
+            if (albumArt != null && !albumArt.isRecycled()) {
+                albumArt.recycle();
+            }
+            if (bigAlbumArt != null && !bigAlbumArt.isRecycled()) {
+                bigAlbumArt.recycle();
+            }
+            System.gc();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void playLocalFile(@NonNull List<LocalFileData> localFileDataList, int position) {
@@ -196,8 +211,9 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
             mediaPlayer.play();
     }
 
-    public void pause() {
+    public void pause(PauseReason pauseReason) {
         mediaPlayer.pause();
+        this.mPauseReason = pauseReason;
     }
 
     public void stop() {
@@ -226,7 +242,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
                 }
                 mediaPlayer.prepareWithYoutubeId(youtubeDataList.get(currentPosition).id);
             }
-            MetricsManager.trackEvent("ListenOnline");
+            Utils.logEvent("listen_online");
         } else {
             if (position != -1) {
                 if (addToTrace)
@@ -314,7 +330,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
             if (intent.getAction().equals(ACTION_PAUSE))
-                pause();
+                pause(PauseReason.UserRequest);
             else if (intent.getAction().equals(ACTION_PLAY))
                 play();
             else if (intent.getAction().equals(ACTION_SKIP))
@@ -327,7 +343,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
                 if (!mediaPlayer.isPlaying())
                     play();
                 else
-                    pause();
+                    pause(PauseReason.UserRequest);
             } else if (intent.getAction().equals(ACTION_PREVIEW)) {
                 List<LocalFileData> tmp = new ArrayList<>();
                 tmp.add(new PreviewAudioData(intent.getData()));
@@ -341,32 +357,21 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
     public void onPrepare() {
         notification.flags = Notification.FLAG_ONGOING_EVENT;
         String description, title;
-//        try {
-//            if (albumArt != null && !albumArt.isRecycled()) {
-//                albumArt.recycle();
-//            }
-//            if (bigAlbumArt != null && !bigAlbumArt.isRecycled()) {
-//                bigAlbumArt.recycle();
-//            }
-//            System.gc();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
 
         if (playOnline) {
             description = youtubeDataList.get(currentPosition).getDescription();
             title = youtubeDataList.get(currentPosition).getTitle();
             views.setTextViewText(R.id.tvTitle, title);
             bigViews.setTextViewText(R.id.tvTitle, title);
-            albumArt = youtubeDataList.get(currentPosition).getIconAsBitmap(200);
-            bigAlbumArt = youtubeDataList.get(currentPosition).getIconAsBitmap(1500);
+            youtubeDataList.get(currentPosition).getIconAsBitmap(albumArt);
+            youtubeDataList.get(currentPosition).getIconAsBitmap(bigAlbumArt);
         } else {
             description = localFileDataList.get(currentPosition).getDescription();
             title = localFileDataList.get(currentPosition).getTitle();
             views.setTextViewText(R.id.tvTitle, title);
             bigViews.setTextViewText(R.id.tvTitle, title);
-            albumArt = localFileDataList.get(currentPosition).getIconAsBitmap(200);
-            bigAlbumArt = localFileDataList.get(currentPosition).getIconAsBitmap(1500);
+            localFileDataList.get(currentPosition).getIconAsBitmap(albumArt);
+            localFileDataList.get(currentPosition).getIconAsBitmap(bigAlbumArt);
         }
         views.setTextViewText(R.id.tvDescription, "Loading...");
         bigViews.setTextViewText(R.id.tvDescription, "Loading...");
@@ -514,8 +519,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
             mediaPlayer.setVolume(DUCK_VOLUME);
         } else if (mediaPlayer.isPlaying()) {
             mAudioFocus = AudioFocus.NoFocusNoDuck;
-            pause();
-            mPauseReason = PauseReason.FocusLoss;
+            pause(PauseReason.FocusLoss);
         }
     }
 

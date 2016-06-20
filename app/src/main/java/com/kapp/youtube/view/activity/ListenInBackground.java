@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import com.kapp.youtube.Constants;
 import com.kapp.youtube.Settings;
+import com.kapp.youtube.Utils;
 import com.kapp.youtube.model.YoutubeData;
 import com.kapp.youtube.presenter.FetchRelatedVideo;
 import com.kapp.youtube.presenter.GetVideoTitle;
@@ -51,11 +52,14 @@ public class ListenInBackground extends Activity {
                 Uri uri = Uri.parse(getIntent().getStringExtra(Intent.EXTRA_TEXT));
                 youtubeId = uri.getLastPathSegment();
                 title = getIntent().getStringExtra(Intent.EXTRA_TEXT);
+                Utils.logEvent("web_browser_intent");
             } else if (getIntent().getData() != null) { /* Intent.ACTION_VIEW */
                 youtubeId = getIntent().getData().getQueryParameter("v");
                 title = getIntent().getData().toString();
+                Utils.logEvent("youtube_app_intent");
             }
             if (youtubeId != null && youtubeId.length() == Constants.YOUTUBE_ID_LENGTH) {
+                Utils.logEvent("listen_in_background");
                 final String finalYoutubeId = youtubeId;
                 final String finalTitle = title;
                 new GetVideoTitle(0, new IPresenterCallback() {

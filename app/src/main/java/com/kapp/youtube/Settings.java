@@ -82,4 +82,10 @@ public class Settings {
         getSharedPreferences().edit().putBoolean(FIRST_OPEN, v)
                 .apply();
     }
+
+    public static int increaseTime(String event) {
+        int current = getSharedPreferences().getInt(event, 0);
+        getSharedPreferences().edit().putInt(event, ++current).apply();
+        return current;
+    }
 }

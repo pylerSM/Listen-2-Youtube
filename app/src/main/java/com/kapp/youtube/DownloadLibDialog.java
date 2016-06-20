@@ -19,8 +19,6 @@ import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import net.hockeyapp.android.metrics.MetricsManager;
-
 import org.videolan.libvlc.util.JNILib;
 
 import java.io.BufferedInputStream;
@@ -46,6 +44,7 @@ public class DownloadLibDialog extends DialogFragment {
 
     public DownloadLibDialog() {
         setRetainInstance(true);
+        Utils.logEvent("download_library");
     }
 
     @Nullable
@@ -95,17 +94,17 @@ public class DownloadLibDialog extends DialogFragment {
                                                     if (unpackZip(outputFile, JNILib.getLibsFolder())) {
                                                         try {
                                                             outputFile.delete();
-                                                        } catch (Exception e) {
+                                                        } catch (Exception ignored) {
                                                         }
                                                         setContent("Checking files...");
                                                         if (JNILib.checkJNILibs()) {
                                                             toast("Load media library success.");
-                                                            MetricsManager.trackEvent("LoadLibSuccess-" + arch);
+                                                            Utils.logEvent("down_libs_success");
                                                             exitDialog();
                                                         } else
                                                             throw new Exception("Library file incorrect. Please contact developer.");
                                                     } else {
-                                                        outputFile.deleteOnExit();
+                                                        outputFile.delete();
                                                         throw new Exception("Unzip error");
                                                     }
 
@@ -121,8 +120,7 @@ public class DownloadLibDialog extends DialogFragment {
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                     exitDialog();
-                                    toast(e.getMessage());
-                                    MetricsManager.trackEvent("LoadLibsError-" + arch);
+                                    logException(e, arch, "Processing library files");
                                 }
                             }
                         }).addOnFailureListener(new OnFailureListener() {
@@ -136,13 +134,13 @@ public class DownloadLibDialog extends DialogFragment {
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
+                        exitDialog();
                         logException(e, arch, "Download libs.zip");
                     }
                 });
             } catch (IOException e) {
                 e.printStackTrace();
                 exitDialog();
-                toast("Load media library error: " + e.getMessage());
                 logException(e, arch, "Create temp zip file");
             }
         }
@@ -155,7 +153,8 @@ public class DownloadLibDialog extends DialogFragment {
     }
 
     private void logException(@NonNull Exception e, String arch, String value) {
-        MetricsManager.trackEvent("LoadLibsError-" + arch);
+        Utils.logEvent("down_lib_err-" + arch);
+        toast("Error while: " + value + "\nPlease try later.\n" + e);
     }
 
     private void toast(final String message) {

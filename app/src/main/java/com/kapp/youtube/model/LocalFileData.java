@@ -37,12 +37,12 @@ public class LocalFileData implements IDisplayData {
         return album == null || album.length() < 2 || album.contains("unknown") ? "Unknown" : album;
     }
 
-    public Bitmap getIconAsBitmap(int size) {
+    public void getIconAsBitmap(Bitmap outBitmap) {
         String album = getAlbum();
         int color = ColorGenerator.MATERIAL.getColor(album);
-        return Utils.drawableToBitmap(TextDrawable.builder().buildRect(
+        Utils.drawableToBitmap(TextDrawable.builder().buildRect(
                 album.substring(0, 2), color
-        ), size);
+        ), outBitmap);
     }
 
     @Override

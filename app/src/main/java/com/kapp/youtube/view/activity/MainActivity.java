@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity
     public static final int SEARCH_ONLINE_TAB = 0, LOCAL_FILE_TAB = 1, PLAY_LIST_TAB = 2;
     private static final String TAG = "MainActivity";
     public static final int REQUEST_CODE = 0;
-    private static final String TUTORIAL_VIDEO = "";
+    private static final String TUTORIAL_VIDEO = "rqbk9Ce1rUw";
     SearchView searchView;
     RecyclerViewFragment searchOnlineFragment, localFileFragment, playListFragment;
     private DrawerLayout drawer;
@@ -205,12 +205,15 @@ public class MainActivity extends AppCompatActivity
             if (savedInstanceState.getBoolean(DRAWER_OPENED_KEY, false))
                 drawer.openDrawer(GravityCompat.START);
             currentTabIndex = savedInstanceState.getInt(CURRENT_TAB_INDEX_KEY, 0);
-        } else if (!JNILib.checkJNILibs()) {
-            if (grantedPermission)
-                showDownloadLibsDialog();
-        } else
-            bindPlaybackService();
+        } else {
+            if (!JNILib.checkJNILibs()) {
+                if (grantedPermission)
+                    showDownloadLibsDialog();
+            } else
+                bindPlaybackService();
 
+            Utils.logEvent("open_main_activity");
+        }
         // Test
 
 
@@ -220,6 +223,7 @@ public class MainActivity extends AppCompatActivity
             searchOnlineFragment = RecyclerViewFragment.newInstance(searchOnlineAdapter);
         } else
             searchOnlineAdapter = (SearchOnlineAdapter) searchOnlineFragment.getAdapter();
+
 
         if (localFileFragment == null) {
             localFileAdapter = new LocalFileAdapter(this, mHandler);
@@ -319,7 +323,6 @@ public class MainActivity extends AppCompatActivity
         /* HOCKEY SDK*/
         FeedbackManager.register(this);
         MetricsManager.register(this, getApplication(), Constants.HOCKEY_APP_ID);
-        MetricsManager.enableUserMetrics();
         checkForUpdates();
 
         /* Open tutorial */
@@ -338,6 +341,7 @@ public class MainActivity extends AppCompatActivity
                         @Override
                         public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                             try {
+                                Utils.logEvent("view_tutorial");
                                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + TUTORIAL_VIDEO));
                                 startActivity(intent);
                             } catch (ActivityNotFoundException ex) {
@@ -562,8 +566,8 @@ public class MainActivity extends AppCompatActivity
                     String playlistName = name.getText().toString();
                     Uri newPlaylistUri = Utils.createPlaylist(getContentResolver(),
                             playlistName);
-                    long playlistId = Utils.parseLastInt(newPlaylistUri.toString());
                     if (newPlaylistUri != null) {
+                        long playlistId = Utils.parseLastInt(newPlaylistUri.toString());
                         Toast.makeText(MainActivity.this, "Create " + playlistName + " playlist success", Toast.LENGTH_SHORT).show();
                         List<LocalFileData> itemsInPlaylist = new ArrayList<>();
                         if (data != null) {
@@ -584,7 +588,7 @@ public class MainActivity extends AppCompatActivity
                     } else
                         Toast.makeText(MainActivity.this, "Create " + playlistName + " playlist have an error.", Toast.LENGTH_SHORT).show();
                     dialog.cancel();
-                    MetricsManager.trackEvent("CreatePlayList");
+                    Utils.logEvent("create_play_list");
                 }
             }
         });
@@ -643,14 +647,14 @@ public class MainActivity extends AppCompatActivity
                     Intent i = new Intent(Intent.ACTION_SEND);
                     i.setType("text/plain");
                     i.putExtra(Intent.EXTRA_SUBJECT, "Youtube Music");
-                    String sAux = "Send github repo";
-                    sAux = sAux + "https://github.com/Khang-NT/Listen-2-Youtube";
+                    String sAux = "Send XDA link";
+                    sAux = sAux + "http://forum.xda-developers.com/android/apps-games/app-youtube-music-sound-stream-youtubes-t3399722/";
                     i.putExtra(Intent.EXTRA_TEXT, sAux);
                     startActivity(Intent.createChooser(i, "Choose one"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                MetricsManager.trackEvent("Share");
+                Utils.logEvent("share");
                 break;
             case R.id.nav_feedback:
                 FeedbackManager.showFeedbackActivity(MainActivity.this);
@@ -817,7 +821,7 @@ public class MainActivity extends AppCompatActivity
                                 .title("Choose download link")
                                 .positiveText("OK")
                                 .autoDismiss(false)
-                                .itemsCallbackSingleChoice(-1, new MaterialDialog.ListCallbackSingleChoice() {
+                                .itemsCallbackSingleChoice(1, new MaterialDialog.ListCallbackSingleChoice() {
                                     @Override
                                     public boolean onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
                                         return true;
@@ -827,7 +831,7 @@ public class MainActivity extends AppCompatActivity
                                     @Override
                                     public void onClick(@NonNull final MaterialDialog dialog, @NonNull DialogAction which) {
                                         int index = dialog.getSelectedIndex();
-                                        MetricsManager.trackEvent("Download");
+                                        Utils.logEvent("download");
                                         if (index == 0) {
                                             final ProgressDialog convertMp3Dialog = ProgressDialog.show(MainActivity.this, "", "Converting to mp3...");
                                             convertMp3Dialog.setCancelable(true);
@@ -837,7 +841,10 @@ public class MainActivity extends AppCompatActivity
                                                     super.onPageFinished(view, url);
                                                     Log.e(TAG, "onPageFinished: " + url);
                                                     if (convertMp3Dialog.isShowing() && url.contains("middle.php")) {
-                                                        convertMp3Dialog.dismiss();
+                                                        try {
+                                                            convertMp3Dialog.dismiss();
+                                                        } catch (Exception ignore) {
+                                                        }
                                                         Uri uri = Uri.parse(url);
                                                         String server = uri.getQueryParameters("server").get(0);
                                                         String hash = uri.getQueryParameters("hash").get(0);
@@ -914,7 +921,7 @@ public class MainActivity extends AppCompatActivity
                 searchOnlineAdapter.removeAll();
                 progressDialog = ProgressDialog.show(this, null, "Search in progress...");
                 new YoutubeQuery(JOB_TYPE_SEARCH, this).execute(query, null);
-                MetricsManager.trackEvent("Search");
+                Utils.logEvent("search");
                 break;
             case LOCAL_FILE_TAB:
                 progressDialog = ProgressDialog.show(this, null, "Search in progress...");
@@ -961,6 +968,7 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         CrashManager.register(this);
+        CrashManager.alwaysSend(this);
         Tracking.startUsage(this);
     }
 

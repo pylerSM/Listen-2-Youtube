@@ -49,6 +49,7 @@ public class PlayListAdapter extends MaterialAdapter<PlayListData> {
     public void removePlaylist(int playListPosition) {
         dataList.remove(playListPosition);
         notifyItemRemoved__(playListPosition + 1);
+        notifyDataSetChanged__();
     }
 
     public void removeItemInCurrentPlaylist(int pos){

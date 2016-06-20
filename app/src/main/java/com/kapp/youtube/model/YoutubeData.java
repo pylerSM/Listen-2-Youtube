@@ -55,11 +55,11 @@ public class YoutubeData implements IDisplayData {
                 "Unknown" : whoUpload;
     }
 
-    public Bitmap getIconAsBitmap(int size) {
+    public void getIconAsBitmap(Bitmap output) {
         String description = getDescription();
         int color = ColorGenerator.MATERIAL.getColor(description);
-        return Utils.drawableToBitmap(TextDrawable.builder().buildRect(
+        Utils.drawableToBitmap(TextDrawable.builder().buildRect(
                 description.substring(0, 2), color
-        ), size);
+        ), output);
     }
 }

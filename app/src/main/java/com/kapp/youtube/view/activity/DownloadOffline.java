@@ -25,9 +25,6 @@ import com.kapp.youtube.presenter.GetLink;
 import com.kapp.youtube.presenter.GetVideoTitle;
 import com.kapp.youtube.presenter.IPresenterCallback;
 import com.kapp.youtube.service.DownloadService;
-import com.kapp.youtube.service.PlaybackService;
-
-import net.hockeyapp.android.metrics.MetricsManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -56,9 +53,6 @@ public class DownloadOffline extends Activity {
             finish();
             return;
         }
-        final Intent intent = new Intent(this, PlaybackService.class);
-        intent.setAction(PlaybackService.ACTION_DO_NOTHING);
-        startService(intent);
 
         String action = getIntent().getAction();
         if (action != null) {
@@ -68,11 +62,14 @@ public class DownloadOffline extends Activity {
                 Uri uri = Uri.parse(getIntent().getStringExtra(Intent.EXTRA_TEXT));
                 youtubeId = uri.getLastPathSegment();
                 url = getIntent().getStringExtra(Intent.EXTRA_TEXT);
+                Utils.logEvent("web_browser_intent");
             } else if (getIntent().getData() != null) { /* Intent.ACTION_VIEW */
                 youtubeId = getIntent().getData().getQueryParameter("v");
                 url = getIntent().getData().toString();
+                Utils.logEvent("youtube_app_intent");
             }
             if (youtubeId != null && youtubeId.length() == Constants.YOUTUBE_ID_LENGTH) {
+                Utils.logEvent("download_offline");
                 fetchingUrl = ProgressDialog.show(new ContextThemeWrapper(this, R.style.AppBaseTheme),
                         "", "Fetching urls...");
                 fetchingUrl.setCancelable(false);
@@ -137,7 +134,7 @@ public class DownloadOffline extends Activity {
                                     public void onClick(@NonNull final MaterialDialog dialog, @NonNull DialogAction which) {
                                         int index = dialog.getSelectedIndex();
                                         dialog.dismiss();
-                                        MetricsManager.trackEvent("Download");
+                                        Utils.logEvent("download");
                                         if (index == 0) {
                                             final ProgressDialog convertMp3Dialog = ProgressDialog.show(new ContextThemeWrapper(DownloadOffline.this, R.style.AppBaseTheme), "", "Converting to mp3...");
                                             convertMp3Dialog.setCancelable(true);
