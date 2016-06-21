@@ -114,6 +114,7 @@
                 <action android:name="PlaybackService.DO_NOTHING"/>
                 <action android:name="PlaybackService.ACTION_PREVIOUS"/>
                 <action android:name="PlaybackService.ACTION_PREVIEW"/>
+                <action android:name="PlaybackService.ACTION_SEEK" />
             </intent-filter>
         </service>
 
@@ -130,7 +131,8 @@
             android:name=".view.activity.ListenInBackground"
             android:theme="@style/AppTranslucent"
             android:icon="@mipmap/ic_launcher"
-            android:label="ListenInBackground">
+            android:label="ListenInBackground"
+            android:excludeFromRecents="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -160,7 +162,8 @@
             android:name=".view.activity.DownloadOffline"
             android:theme="@style/AppTranslucent"
             android:icon="@mipmap/ic_launcher"
-            android:label="DownloadOffline">
+            android:label="DownloadOffline"
+            android:excludeFromRecents="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -185,6 +188,17 @@
                     android:pathPrefix="/watch"
                     android:scheme="https" />
             </intent-filter>
+
+            <intent-filter>
+                <action android:name="com.kapp.youtube.download" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".view.activity.ActivityControlPlayback"
+            android:theme="@style/AppTranslucent"
+            android:excludeFromRecents="true"
+            android:finishOnTaskLaunch="true">
+
         </activity>
     </application>
 

@@ -23,6 +23,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import com.kapp.youtube.R;
 import com.kapp.youtube.Settings;
@@ -36,7 +37,7 @@ import com.kapp.youtube.mediaplayer.RemoteControlClientCompat;
 import com.kapp.youtube.mediaplayer.RemoteControlHelper;
 import com.kapp.youtube.model.LocalFileData;
 import com.kapp.youtube.model.YoutubeData;
-import com.kapp.youtube.view.activity.MainActivity;
+import com.kapp.youtube.view.activity.ActivityControlPlayback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,8 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
             ACTION_SKIP = "PlaybackService.ACTION_SKIP",
             ACTION_DO_NOTHING = "PlaybackService.ACTION_DO_NOTHING",
             ACTION_PREVIOUS = "PlaybackService.ACTION_PREVIOUS",
-            ACTION_PREVIEW = "PlaybackService.ACTION_PREVIEW";
+            ACTION_PREVIEW = "PlaybackService.ACTION_PREVIEW",
+            ACTION_SEEK = "PlaybackService.ACTION_SEEK";
     private static final int FOREGROUND_ID = Integer.MAX_VALUE;
 
     boolean playOnline = false;
@@ -82,21 +84,31 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
         NoFocusCanDuck,   // we don't have focus, but can play at a low volume ("ducking")
         Focused           // we have full audio focus
     }
+
     AudioFocus mAudioFocus = AudioFocus.NoFocusNoDuck;
 
     enum PauseReason {
         UserRequest,  // paused by user request
         FocusLoss,    // paused because of audio focus loss
     }
+
     // why did we pause? (only relevant if mState == State.Paused)
     PauseReason mPauseReason = PauseReason.UserRequest;
 
     RemoteControlClientCompat mRemoteControlClientCompat;
     ComponentName mMediaButtonReceiverComponent;
 
+    private Intent contentIntent;
+
     @Override
     public void onCreate() {
         super.onCreate();
+
+        contentIntent = new Intent(this, ActivityControlPlayback.class);
+        contentIntent.setFlags(
+                Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
+        contentIntent.setAction(ActivityControlPlayback.UPDATE_CONTROL_ACTION);
 
         /* Init album art */
         albumArt = Bitmap.createBitmap(200, 200, Bitmap.Config.ARGB_8888);
@@ -111,12 +123,6 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
         views = new RemoteViews(getPackageName(), R.layout.notification_small);
         bigViews = new RemoteViews(getPackageName(), R.layout.notification_expanded);
 
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        notificationIntent.setFlags(
-                Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP
-        );
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
-                notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent previousIntent = new Intent(this, PlaybackService.class);
         previousIntent.setAction(ACTION_PREVIOUS);
@@ -133,8 +139,6 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
         PendingIntent pNextIntent = PendingIntent.getService(this, 0,
                 nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        views.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
-        bigViews.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
 
         views.setOnClickPendingIntent(R.id.ibPrevious, pPreviousIntent);
         bigViews.setOnClickPendingIntent(R.id.ibPrevious, pPreviousIntent);
@@ -144,7 +148,6 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
 
         views.setOnClickPendingIntent(R.id.ibNext, pNextIntent);
         bigViews.setOnClickPendingIntent(R.id.ibNext, pNextIntent);
-
 
 
         notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -265,16 +268,17 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
 
     public void previous() {
         long currentPos = mediaPlayer.getPosition();
-        if (currentPos != -1 && currentPos > 10*1000 && mediaPlayer.canSeek())
+        if (currentPos != -1 && currentPos > 10 * 1000 && mediaPlayer.canSeek())
             mediaPlayer.seek(0);
-        else if (trace.size() > 0){
+        else if (trace.size() > 0) {
             try {
                 int previous;
                 if (playOnline) {
                     do {
                         previous = trace.get(trace.size() - 1);
                         trace.remove(trace.size() - 1);
-                    } while (trace.size() > 0 && (previous >= youtubeDataList.size() || previous < 0));
+                    }
+                    while (trace.size() > 0 && (previous >= youtubeDataList.size() || previous < 0));
                     if (trace.size() == 0)
                         next(-1, false);
                     else
@@ -283,7 +287,8 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
                     do {
                         previous = trace.get(trace.size() - 1);
                         trace.remove(trace.size() - 1);
-                    } while (trace.size() > 0 && (previous >= localFileDataList.size() || previous < 0));
+                    }
+                    while (trace.size() > 0 && (previous >= localFileDataList.size() || previous < 0));
                     if (trace.size() == 0)
                         next(-1, false);
                     else
@@ -294,6 +299,15 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
             }
         } else
             Log.d(TAG, "previous - line 189: Trace empty");
+    }
+
+    private void seek(long seekTo) {
+        if (mediaPlayer.isPlaying() || mediaPlayer.isPaused()) {
+            if (mediaPlayer.canSeek()) {
+                mediaPlayer.seek(seekTo);
+            } else
+                Toast.makeText(PlaybackService.this, "This track not support to change playback position.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private int getNextPosition(int listSize, int previousPosition) {
@@ -348,15 +362,26 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
                 List<LocalFileData> tmp = new ArrayList<>();
                 tmp.add(new PreviewAudioData(intent.getData()));
                 playLocalFile(tmp, 0);
+            } else if (intent.getAction().equals(ACTION_SEEK)) {
+                long seekTo = intent.getLongExtra("position", -1);
+                if (seekTo != -1) {
+                    seek(seekTo * 1000);
+                }
             }
         }
         return START_NOT_STICKY;
     }
 
+
     @Override
     public void onPrepare() {
         notification.flags = Notification.FLAG_ONGOING_EVENT;
         String description, title;
+
+        // PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+        //  notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        //views.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+        // bigViews.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
 
         if (playOnline) {
             description = youtubeDataList.get(currentPosition).getDescription();
@@ -365,6 +390,10 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
             bigViews.setTextViewText(R.id.tvTitle, title);
             youtubeDataList.get(currentPosition).getIconAsBitmap(albumArt);
             youtubeDataList.get(currentPosition).getIconAsBitmap(bigAlbumArt);
+
+            contentIntent.putExtra(ActivityControlPlayback.TITLE, title);
+            contentIntent.putExtra(ActivityControlPlayback.YOUTUBE_ID, youtubeDataList.get(currentPosition).id);
+            contentIntent.putExtra(ActivityControlPlayback.IS_ONLINE, true);
         } else {
             description = localFileDataList.get(currentPosition).getDescription();
             title = localFileDataList.get(currentPosition).getTitle();
@@ -372,7 +401,26 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
             bigViews.setTextViewText(R.id.tvTitle, title);
             localFileDataList.get(currentPosition).getIconAsBitmap(albumArt);
             localFileDataList.get(currentPosition).getIconAsBitmap(bigAlbumArt);
+
+            contentIntent.putExtra(ActivityControlPlayback.TITLE, title);
+            contentIntent.putExtra(ActivityControlPlayback.IS_ONLINE, false);
         }
+
+        contentIntent.putExtra(ActivityControlPlayback.IS_PLAYING, true);
+        contentIntent.putExtra(ActivityControlPlayback.CURRENT_SECS, 0L);
+        contentIntent.putExtra(ActivityControlPlayback.DURATION, 0L);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        views.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+        bigViews.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+
+        lastPosition = 0;
+        /* send broadcast */
+        Intent i = new Intent(ActivityControlPlayback.UPDATE_CONTROL_ACTION);
+        i.putExtras(contentIntent.getExtras());
+        sendBroadcast(i);
+
         views.setTextViewText(R.id.tvDescription, "Loading...");
         bigViews.setTextViewText(R.id.tvDescription, "Loading...");
 
@@ -414,6 +462,21 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
 
     @Override
     public void onPlayed() {
+
+        contentIntent.putExtra(ActivityControlPlayback.DURATION, mediaPlayer.getDuration() / 1000);
+        contentIntent.putExtra(ActivityControlPlayback.CURRENT_SECS, mediaPlayer.getPosition() / 1000);
+        contentIntent.putExtra(ActivityControlPlayback.IS_PLAYING, true);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        views.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+        bigViews.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+
+        /* send broadcast */
+        Intent intent = new Intent(ActivityControlPlayback.UPDATE_CONTROL_ACTION);
+        intent.putExtras(contentIntent.getExtras());
+        sendBroadcast(intent);
+
         if (playOnline) {
             views.setTextViewText(R.id.tvDescription, youtubeDataList.get(currentPosition).getDescription());
             bigViews.setTextViewText(R.id.tvDescription, youtubeDataList.get(currentPosition).getDescription());
@@ -441,6 +504,21 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
 
     @Override
     public void onPaused() {
+
+        contentIntent.putExtra(ActivityControlPlayback.DURATION, mediaPlayer.getDuration() / 1000);
+        contentIntent.putExtra(ActivityControlPlayback.CURRENT_SECS, mediaPlayer.getPosition() / 1000);
+        contentIntent.putExtra(ActivityControlPlayback.IS_PLAYING, false);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        views.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+        bigViews.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+
+        /* send broadcast */
+        Intent intent = new Intent(ActivityControlPlayback.UPDATE_CONTROL_ACTION);
+        intent.putExtras(contentIntent.getExtras());
+        sendBroadcast(intent);
+
         notification.flags = Notification.FLAG_AUTO_CANCEL;
         views.setImageViewResource(R.id.ibTogglePlayback, R.drawable.ic_action_playback_play);
         bigViews.setImageViewResource(R.id.ibTogglePlayback, R.drawable.ic_action_playback_play);
@@ -458,6 +536,19 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
 
     @Override
     public void onStopped() {
+        contentIntent.putExtra(ActivityControlPlayback.IS_PLAYING, false);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        views.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+        bigViews.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+
+        /* send broadcast */
+        Intent intent = new Intent(ActivityControlPlayback.UPDATE_CONTROL_ACTION);
+        intent.putExtras(contentIntent.getExtras());
+        sendBroadcast(intent);
+
+
         notification.flags = Notification.FLAG_AUTO_CANCEL;
         views.setImageViewResource(R.id.ibTogglePlayback, R.drawable.ic_action_playback_play);
         bigViews.setImageViewResource(R.id.ibTogglePlayback, R.drawable.ic_action_playback_play);
@@ -487,9 +578,27 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
         next(-1, true);
     }
 
+    long lastPosition = -1;
+
     @Override
     public void onPositionChanged(long duration, long current) {
 
+        contentIntent.putExtra(ActivityControlPlayback.DURATION, duration / 1000);
+        contentIntent.putExtra(ActivityControlPlayback.CURRENT_SECS, current / 1000);
+        contentIntent.putExtra(ActivityControlPlayback.IS_PLAYING, true);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        views.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+        bigViews.setOnClickPendingIntent(R.id.notification_container, pendingIntent);
+
+        if (current - lastPosition > 1000) {
+            /* send broadcast */
+            Intent intent = new Intent(ActivityControlPlayback.UPDATE_CONTROL_ACTION);
+            intent.putExtras(contentIntent.getExtras());
+            sendBroadcast(intent);
+            lastPosition = current;
+        }
     }
 
     void giveUpAudioFocus() {
@@ -539,8 +648,8 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
             if (uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
                 this.title = uri.getLastPathSegment();
                 this.duration = Utils.getMediaDuration(uri);
-            } else  if (uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
-                String[] proj = { MediaStore.Audio.Media.TITLE,  MediaStore.Audio.Media.DURATION};
+            } else if (uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
+                String[] proj = {MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.DURATION};
                 Cursor cursor = getContentResolver().query(uri, proj, null, null, null);
                 if (cursor != null && cursor.moveToFirst()) {
                     this.title = cursor.getString(0);

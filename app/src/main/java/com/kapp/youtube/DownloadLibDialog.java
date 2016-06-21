@@ -2,7 +2,9 @@ package com.kapp.youtube;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
@@ -15,9 +17,11 @@ import android.widget.Toast;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.thin.downloadmanager.DownloadRequest;
+import com.thin.downloadmanager.DownloadStatusListenerV1;
+import com.thin.downloadmanager.ThinDownloadManager;
 
 import org.videolan.libvlc.util.JNILib;
 
@@ -58,6 +62,7 @@ public class DownloadLibDialog extends DialogFragment {
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         if (dialog == null) {
+            Log.e("dialog", "onAttach: download=============================");
             callback = (OnDownloadLibDialogDismiss) activity;
             final String arch = JNILib.getCPUArchitecture();
             final StorageReference bucket = FirebaseStorage.getInstance().getReference();
@@ -65,83 +70,28 @@ public class DownloadLibDialog extends DialogFragment {
                     .cancelable(false)
                     .title("Load media library")
                     .content("Downloading " + arch + "-libs.zip...")
-                    .progress(true, 100)
+                    .progress(false, 100)
                     .progressIndeterminateStyle(false)
                     .build();
             final File outputDir = getActivity().getCacheDir();
             try {
                 final File outputFile = File.createTempFile("libs", "zip", outputDir);
-                bucket.child(arch).child("libs.zip").getFile(outputFile).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                bucket.child(arch).child("libs.zip").getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                     @Override
-                    public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                        setContent("Check md5 sum...");
-                        bucket.child(arch).child("md5.txt").getBytes(Long.MAX_VALUE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
-                            @Override
-                            public void onSuccess(byte[] bytes) {
-                                String md5 = null, getMd5 = null;
-                                try {
-                                    md5 = new String(bytes, "UTF-8").trim();
-                                    Log.e("TAG", "onSuccess: md5 " + md5);
-
-                                    getMd5 = getMD5Checksum(outputFile);
-                                    Log.e("TAG", "onSuccess: md5 get " + getMd5);
-                                    if (md5.toLowerCase().contains(getMd5)) {
-                                        setContent("Unzip files...");
-                                        new Thread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                try {
-                                                    if (unpackZip(outputFile, JNILib.getLibsFolder())) {
-                                                        try {
-                                                            outputFile.delete();
-                                                        } catch (Exception ignored) {
-                                                        }
-                                                        setContent("Checking files...");
-                                                        if (JNILib.checkJNILibs()) {
-                                                            toast("Load media library success.");
-                                                            Utils.logEvent("down_libs_success");
-                                                            exitDialog();
-                                                        } else
-                                                            throw new Exception("Library file incorrect. Please contact developer.");
-                                                    } else {
-                                                        outputFile.delete();
-                                                        throw new Exception("Unzip error");
-                                                    }
-
-                                                } catch (Exception e) {
-                                                    exitDialog();
-                                                    logException(e, arch, "Upzip");
-                                                }
-                                            }
-                                        }).start();
-
-                                    } else
-                                        throw new Exception("MD5 mismatch");
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                    exitDialog();
-                                    logException(e, arch, "Processing library files");
-                                }
-                            }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                exitDialog();
-                                logException(e, arch, "Download md5.txt");
-                            }
-                        });
+                    public void onSuccess(Uri uri) {
+                        doDownloadZip(arch, uri, outputFile, bucket);
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         exitDialog();
-                        logException(e, arch, "Download libs.zip");
+                        logException(e.toString(), arch, "Get library url");
                     }
                 });
             } catch (IOException e) {
                 e.printStackTrace();
                 exitDialog();
-                logException(e, arch, "Create temp zip file");
+                logException(e.toString(), arch, "Create temp zip file");
             }
         }
     }
@@ -152,10 +102,11 @@ public class DownloadLibDialog extends DialogFragment {
         return dialog;
     }
 
-    private void logException(@NonNull Exception e, String arch, String value) {
+    private void logException(String e, String arch, String w) {
         Utils.logEvent("down_lib_err-" + arch);
-        toast("Error while: " + value + "\nPlease try later.\n" + e);
+        toast("Error while: " + w + "\nPlease try later.\n" + e);
     }
+
 
     private void toast(final String message) {
         if (getActivity() != null)
@@ -188,7 +139,6 @@ public class DownloadLibDialog extends DialogFragment {
                 }
             });
     }
-
 
     @Override
     public void dismiss() {
@@ -278,5 +228,99 @@ public class DownloadLibDialog extends DialogFragment {
         if (getDialog() != null && getRetainInstance())
             getDialog().setDismissMessage(null);
         super.onDestroyView();
+    }
+
+    private void doDownloadZip(final String arch, Uri uri, final File dest, final StorageReference bucket) {
+        ThinDownloadManager downloadManager = new ThinDownloadManager(new Handler());
+        DownloadRequest downloadRequest = new DownloadRequest(uri);
+        downloadRequest.setDestinationURI(Uri.fromFile(dest))
+                .setDownloadContext(getActivity().getApplicationContext())
+                .setPriority(DownloadRequest.Priority.HIGH)
+                .setStatusListener(new DownloadStatusListenerV1() {
+                    int lastProcess = -1;
+
+                    @Override
+                    public void onDownloadComplete(DownloadRequest downloadRequest) {
+                        dialog.getProgressBar().setIndeterminate(true);
+                        doCheckSumAndUnzip(arch, dest, bucket);
+                    }
+
+                    @Override
+                    public void onDownloadFailed(DownloadRequest downloadRequest, int errorCode, String errorMessage) {
+                        logException(errorMessage, arch, "Download library");
+                        exitDialog();
+                    }
+
+                    @Override
+                    public void onProgress(DownloadRequest downloadRequest, long totalBytes, long downloadedBytes, int progress) {
+                        if (lastProcess != progress && dialog != null && dialog.isShowing()) {
+                            try {
+                                dialog.setProgress(progress);
+                            } catch (Exception ignore) {
+                            }
+                            lastProcess = progress;
+                        }
+                    }
+                });
+        downloadManager.add(downloadRequest);
+    }
+
+    private void doCheckSumAndUnzip(final String arch, final File dest, final StorageReference bucket) {
+        setContent("Check md5 sum...");
+        bucket.child(arch).child("md5.txt").getBytes(Long.MAX_VALUE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+            @Override
+            public void onSuccess(byte[] bytes) {
+                String md5, getMd5;
+                try {
+                    md5 = new String(bytes, "UTF-8").trim();
+                    Log.e("TAG", "onSuccess: md5 " + md5);
+
+                    getMd5 = getMD5Checksum(dest);
+                    Log.e("TAG", "onSuccess: md5 get " + getMd5);
+                    if (md5.toLowerCase().contains(getMd5)) {
+                        setContent("Unzip files...");
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    if (unpackZip(dest, JNILib.getLibsFolder())) {
+                                        try {
+                                            dest.delete();
+                                        } catch (Exception ignored) {
+                                        }
+                                        setContent("Checking files...");
+                                        if (JNILib.checkJNILibs()) {
+                                            toast("Load media library success.");
+                                            Utils.logEvent("down_libs_success");
+                                            exitDialog();
+                                        } else
+                                            throw new Exception("Library file incorrect. Please contact developer.");
+                                    } else {
+                                        dest.delete();
+                                        throw new Exception("Unzip error");
+                                    }
+
+                                } catch (Exception e) {
+                                    exitDialog();
+                                    logException(e.toString(), arch, "Upzip");
+                                }
+                            }
+                        }).start();
+
+                    } else
+                        throw new Exception("MD5 mismatch");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    exitDialog();
+                    logException(e.toString(), arch, "Processing library files");
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                exitDialog();
+                logException(e.toString(), arch, "Download md5.txt");
+            }
+        });
     }
 }

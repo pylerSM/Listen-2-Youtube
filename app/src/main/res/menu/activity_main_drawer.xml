@@ -20,7 +20,7 @@
             android:title="Settings" />
         <item
             android:id="@+id/nav_download"
-            android:icon="@drawable/ic_cloud_download"
+            android:icon="@drawable/ic_file_download"
             android:title="Download management" />
     </group>
     <item android:title="Communicate">

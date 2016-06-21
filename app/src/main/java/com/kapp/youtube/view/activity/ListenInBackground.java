@@ -67,8 +67,8 @@ public class ListenInBackground extends Activity {
                     public void onFinish(int jobType, Object result) {
                         final YoutubeData youtubeData = new YoutubeData(
                                 finalYoutubeId,
-                                finalTitle,
-                                result == null ? "Unknown" : result.toString(),
+                                result == null ? finalTitle : result.toString(),
+                                "YouTube",
                                 null);
                         serviceConnection = new ServiceConnection() {
                             @Override

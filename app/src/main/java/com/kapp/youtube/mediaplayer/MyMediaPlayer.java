@@ -43,6 +43,7 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
     private PlaybackListener listener;
     private int flag = 0;
 
+
     public MyMediaPlayer(Context mContext) {
         sMediaPlayer = new MediaPlayer(getLibVLC());
         sMediaPlayer.setEventListener(this);
@@ -112,6 +113,7 @@ public class MyMediaPlayer implements MediaPlayer.EventListener, IPresenterCallb
 
     public void seek(long toPos) {
         sMediaPlayer.setPosition(toPos);
+        sMediaPlayer.setTime(toPos);
     }
 
     public boolean canSeek() {

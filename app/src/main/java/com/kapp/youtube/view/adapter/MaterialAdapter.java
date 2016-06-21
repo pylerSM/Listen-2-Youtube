@@ -30,6 +30,10 @@ public abstract class MaterialAdapter<T extends IDisplayData> extends RecyclerVi
         dataList = new ArrayList<>();
     }
 
+    public void setHandler(Handler mHandler) {
+        this.mHandler = mHandler;
+    }
+
     public RecyclerView.Adapter getMaterialAdapter() {
         return materialAdapter;
     }

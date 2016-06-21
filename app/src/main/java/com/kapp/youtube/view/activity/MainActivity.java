@@ -213,32 +213,49 @@ public class MainActivity extends AppCompatActivity
                 bindPlaybackService();
 
             Utils.logEvent("open_main_activity");
+            /* Open tutorial */
+            checkFirstOpen();
         }
-        // Test
 
-
-        // Init Fragment and adapter
         if (searchOnlineFragment == null) {
             searchOnlineAdapter = new SearchOnlineAdapter(this, mHandler);
             searchOnlineFragment = RecyclerViewFragment.newInstance(searchOnlineAdapter);
-        } else
+        } else {
             searchOnlineAdapter = (SearchOnlineAdapter) searchOnlineFragment.getAdapter();
+            if (searchOnlineAdapter == null) {
+                searchOnlineAdapter = new SearchOnlineAdapter(this, mHandler);
+                searchOnlineFragment = RecyclerViewFragment.newInstance(searchOnlineAdapter);
+            }
+        }
 
 
         if (localFileFragment == null) {
             localFileAdapter = new LocalFileAdapter(this, mHandler);
             localFileFragment = RecyclerViewFragment.newInstance(localFileAdapter);
             loadLocalFile = false;
-        } else
+        } else {
             localFileAdapter = (LocalFileAdapter) localFileFragment.getAdapter();
+            if (localFileAdapter == null) {
+                localFileAdapter = new LocalFileAdapter(this, mHandler);
+                localFileFragment = RecyclerViewFragment.newInstance(localFileAdapter);
+            }
+            loadLocalFile = localFileAdapter.getItemCount() != 0;
+        }
 
         if (playListFragment == null) {
             playListAdapter = new PlayListAdapter(this, mHandler);
             playListFragment = RecyclerViewFragment.newInstance(playListAdapter);
             if (grantedPermission)
                 new FetchPlayList(this, JOB_TYPE_FETCH_PLAY_LIST, this).execute();
-        } else
+        } else {
             playListAdapter = (PlayListAdapter) playListFragment.getAdapter();
+            if (playListAdapter == null) {
+                playListAdapter = new PlayListAdapter(this, mHandler);
+                playListFragment = RecyclerViewFragment.newInstance(playListAdapter);
+                if (grantedPermission)
+                    new FetchPlayList(this, JOB_TYPE_FETCH_PLAY_LIST, this).execute();
+            }
+        }
 
 
         materialViewPager.getViewPager().setAdapter(new FragmentStatePagerAdapter(getSupportFragmentManager()) {
@@ -324,9 +341,6 @@ public class MainActivity extends AppCompatActivity
         FeedbackManager.register(this);
         MetricsManager.register(this, getApplication(), Constants.HOCKEY_APP_ID);
         checkForUpdates();
-
-        /* Open tutorial */
-        checkFirstOpen();
     }
 
     private void checkFirstOpen() {

@@ -28,6 +28,7 @@ public class RecyclerViewFragment extends Fragment {
 
     private LinearLayoutManager layoutManager;
     private RecyclerView mRecyclerView;
+    boolean viewCreated = false;
 
     public static RecyclerViewFragment newInstance(MaterialAdapter mAdapter) {
         RecyclerViewFragment fragment = new RecyclerViewFragment();
@@ -35,6 +36,13 @@ public class RecyclerViewFragment extends Fragment {
         fragment.mAdapter = mAdapter;
         Log.e("TAG", "newInstance - line 35: create fragment");
         return fragment;
+    }
+
+    public void setAdapter(MaterialAdapter mAdapter) {
+        this.mAdapter = mAdapter;
+        if (mRecyclerView != null)
+            mRecyclerView.setAdapter(this.mAdapter.getMaterialAdapter());
+
     }
 
     @Override
@@ -45,6 +53,8 @@ public class RecyclerViewFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable final Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        viewCreated = true;
+
         mRecyclerView = (RecyclerView) view.findViewById(R.id.recyclerView);
         mRecyclerView.setHasFixedSize(true);
         boolean isLandscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
@@ -87,6 +97,7 @@ public class RecyclerViewFragment extends Fragment {
             }, 500);
 
         }
+
     }
 
     public RecyclerView getRecyclerView() {
@@ -108,5 +119,11 @@ public class RecyclerViewFragment extends Fragment {
         super.onSaveInstanceState(outState);
         outState.putInt(LAYOUT_MANAGER_STATE, layoutManager.findLastCompletelyVisibleItemPosition());
         Log.e("TAG", "onSaveInstanceState - line 70: ");
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mRecyclerView = null;
     }
 }

@@ -50,6 +50,18 @@ public class Settings {
         return getSharedPreferences().getBoolean(IS_SHUFFLE, false);
     }
 
+    public static boolean toggleRepeat() {
+        boolean isRepeat = !isRepeat();
+        getSharedPreferences().edit().putBoolean(IS_REPEAT, isRepeat).apply();
+        return isRepeat;
+    }
+
+    public static boolean toggleShuffle() {
+        boolean isShuffle = !isShuffle();
+        getSharedPreferences().edit().putBoolean(IS_SHUFFLE, isShuffle).apply();
+        return isShuffle;
+    }
+
     public static boolean isOnlyMusicCategory() {
         return getSharedPreferences().getBoolean(SEARCH_ONLY_MUSIC_VIDEO, true);
     }

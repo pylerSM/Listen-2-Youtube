@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="14dp"
+        android:layout_marginLeft="5dp"
+        android:layout_margin="5dp"
+        android:gravity="center"
+        android:lines="1"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:paddingLeft="14dp"
+        android:paddingRight="14dp"
+        android:textColor="#ffffff"
+        android:textSize="18sp"
+        tools:text="David Guetta ft. Zara Larsson - This One's For You (Official Audio) (UEFA EURO 2016™ Official Song)" />
+
+    <SeekBar
+        android:id="@+id/sbTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp" />
+
+    <TextView
+        android:id="@+id/tvTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="2dp"
+        android:gravity="center"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:textColor="#d5ffffff"
+        tools:text="25:08 / 30:00" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.andexert.library.RippleView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:rv_centered="true"
+            app:rv_color="?colorAccent"
+            app:rv_zoomDuration="300">
+
+            <ImageView
+                android:id="@+id/ivRepeat"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="5dp"
+                android:src="@drawable/repeat_icon" />
+        </com.andexert.library.RippleView>
+
+        <com.andexert.library.RippleView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:rv_centered="true"
+            app:rv_color="?colorAccent"
+            app:rv_zoomDuration="300">
+
+            <ImageView
+                android:id="@+id/ivStop"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_margin="5dp"
+                android:background="@drawable/ic_stop" />
+        </com.andexert.library.RippleView>
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/fbToggle"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_margin="7dp"
+            android:src="@drawable/ic_action_playback_play" />
+
+        <com.andexert.library.RippleView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:rv_centered="true"
+            app:rv_color="?colorAccent"
+            app:rv_alpha="255"
+            app:rv_zoomDuration="300">
+
+            <ImageView
+                android:id="@+id/ivNext"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="5dp"
+                android:background="@drawable/ic_action_playback_next" />
+        </com.andexert.library.RippleView>
+
+        <com.andexert.library.RippleView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:rv_centered="true"
+            app:rv_color="?colorAccent"
+            app:rv_alpha="255"
+            app:rv_zoomDuration="300">
+
+            <ImageView
+                android:id="@+id/ivSchuffleAndDownload"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_margin="5dp"
+                android:src="@drawable/schuffle_iconb" />
+        </com.andexert.library.RippleView>
+
+    </LinearLayout>
+</LinearLayout>

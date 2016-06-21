@@ -39,8 +39,12 @@ import java.util.List;
  * Created by blackcat on 19/06/2016.
  */
 public class DownloadOffline extends Activity {
+    public static final String YOUTUBE_ID = "youtube_id";
+    public static final String TITLE = "title";
     private boolean grantedPermission = true;
     private ProgressDialog fetchingUrl;
+
+    public static final String DOWNLOAD_ACTION = "com.kapp.youtube.download";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +67,9 @@ public class DownloadOffline extends Activity {
                 youtubeId = uri.getLastPathSegment();
                 url = getIntent().getStringExtra(Intent.EXTRA_TEXT);
                 Utils.logEvent("web_browser_intent");
+            } else if (action.equalsIgnoreCase(DOWNLOAD_ACTION)) {
+                youtubeId = getIntent().getStringExtra(YOUTUBE_ID);
+                url = getIntent().getStringExtra(TITLE);
             } else if (getIntent().getData() != null) { /* Intent.ACTION_VIEW */
                 youtubeId = getIntent().getData().getQueryParameter("v");
                 url = getIntent().getData().toString();
@@ -89,7 +96,7 @@ public class DownloadOffline extends Activity {
         finish();
     }
 
-    private void doGetLink(String videoId, final String youtubeUrl, String title) {
+    private void doGetLink(String videoId, final String youtubeUrl, final String title) {
         new GetLink(0, new IPresenterCallback() {
             @Override
             public void onFinish(int jobType, Object result) {
@@ -97,7 +104,7 @@ public class DownloadOffline extends Activity {
                 if (result != null) {
                     final JSONObject jsonObject = (JSONObject) result;
                     try {
-                        final String title = jsonObject.getString("title"),
+                        final String youtubeUrl = jsonObject.getString("title"),
                                 album = jsonObject.getString("album"),
                                 getLinkUrl = jsonObject.getString("getLinkUrl");
                         final JSONObject audio = jsonObject.getJSONObject("audio");
@@ -168,7 +175,7 @@ public class DownloadOffline extends Activity {
                                                         Intent intent = new Intent(DownloadOffline.this, DownloadService.class);
                                                         intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
                                                         intent.putExtra(DownloadService.URL, String.format("http://%s.listentoyoutube.com/download/%s/%s", server, hash, file));
-                                                        intent.putExtra(DownloadService.TITLE, youtubeUrl);
+                                                        intent.putExtra(DownloadService.TITLE, title);
                                                         intent.putExtra(DownloadService.ALBUM, album);
                                                         intent.putExtra(DownloadService.FILE_NAME, Utils.getValidFileName(file));
                                                         intent.putExtra(DownloadService.TYPE, DownloadService.TYPE_MUSIC);
