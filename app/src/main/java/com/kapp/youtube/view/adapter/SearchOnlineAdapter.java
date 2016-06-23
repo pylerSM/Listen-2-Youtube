@@ -37,7 +37,7 @@ public class SearchOnlineAdapter extends MaterialAdapter<YoutubeData> {
                     mHandler,
                     true
             );
-            holder.ivSmallButton.setImageResource(R.drawable.ic_action_download);
+            holder.ivSmallButton.setImageResource(R.drawable.ic_action_download_black);
             return holder;
         }
         else

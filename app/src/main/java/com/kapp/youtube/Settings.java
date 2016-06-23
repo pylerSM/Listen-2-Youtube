@@ -20,7 +20,10 @@ public class Settings {
             SEARCH_ONLY_MUSIC_VIDEO = "SEARCH_ONLY_MUSIC_VIDEO";
     public static final String IS_AUTO_PLAY = "IS_AUTO_PLAY";
     public static final String DEVICE_KEY = "DEVICE_KEY";
-    public static final String FIRST_OPEN = "FIRST_OPEN";
+    public static final String FIRST_OPEN = "FIRST_OPEN_12";
+    public static final String VOLUME = "volume_int";
+    public static final String DOWNLOAD_CHOICE = "download_choice";
+
     private static Context context;
 
     public static void init(Context ctx) {
@@ -95,9 +98,23 @@ public class Settings {
                 .apply();
     }
 
-    public static int increaseTime(String event) {
-        int current = getSharedPreferences().getInt(event, 0);
-        getSharedPreferences().edit().putInt(event, ++current).apply();
-        return current;
+    public static void setVolume(int volume) {
+        getSharedPreferences().edit()
+                .putInt(VOLUME, volume)
+                .apply();
+    }
+
+    public static int getVolume() {
+        return getSharedPreferences().getInt(VOLUME, 80);
+    }
+
+    public static void set(String key, String value) {
+        getSharedPreferences().edit()
+                .putString(key, value)
+                .apply();
+    }
+
+    public static String getDownloadChoice() {
+        return getSharedPreferences().getString(DOWNLOAD_CHOICE, context.getString(R.string.default_download_choice));
     }
 }

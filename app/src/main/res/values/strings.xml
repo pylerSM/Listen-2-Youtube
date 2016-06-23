@@ -10,5 +10,13 @@
     <!-- Example settings for Data & Sync -->
 
     <!-- Example settings for Notifications -->
-
+    <string name="default_download_choice">Always ask</string>
+    <array name="download_choices">
+        <item>Always ask</item>
+        <item>Audio - Mp3 (320kbps)</item>
+        <item>Audio - Opus format</item>
+        <item>Video - small</item>
+        <item>Video - medium</item>
+        <item>Video - largest</item>
+    </array>
 </resources>

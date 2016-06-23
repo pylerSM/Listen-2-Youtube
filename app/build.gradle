@@ -7,8 +7,8 @@ android {
         applicationId "com.kapp.youtube"
         minSdkVersion 16
         targetSdkVersion 23
-        versionCode 10
-        versionName "1.2.0"
+        versionCode 13
+        versionName "1.2.3a"
         manifestPlaceholders = [HOCKEYAPP_APP_ID: "6f22f99012ba4bb199b97ac6d0115bcc"]
     }
     buildTypes {
@@ -41,11 +41,9 @@ dependencies {
     compile 'com.google.apis:google-api-services-youtube:v3-rev163-1.21.0'
     compile 'com.mani:ThinDownloadManager:1.2.5'
     compile 'jp.wasabeef:recyclerview-animators:2.2.3'
-    compile 'com.google.firebase:firebase-core:9.0.2'
-    compile 'com.google.firebase:firebase-storage:9.0.2'
-    compile 'com.google.firebase:firebase-auth:9.0.2'
-    compile 'com.google.firebase:firebase-messaging:9.0.2'
     compile 'com.afollestad.material-dialogs:core:0.8.5.9'
+    compile 'com.squareup.okhttp3:okhttp:3.3.1'
+    compile files('src/libs/RootTools.jar')
 }
 
-apply plugin: 'com.google.gms.google-services'
+//apply plugin: 'com.google.gms.google-services'

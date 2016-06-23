@@ -231,8 +231,11 @@ public class DownloadService extends Service {
 
     public void startForeground() {
         startForeground = true;
-        PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
-                new Intent(getApplicationContext(), DownloadManagerActivity.class),
+        Intent intent = new Intent(getApplicationContext(), DownloadManagerActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK |
+                Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_action_download)

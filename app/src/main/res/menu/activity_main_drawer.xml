@@ -23,7 +23,9 @@
             android:icon="@drawable/ic_file_download"
             android:title="Download management" />
     </group>
-    <item android:title="Communicate">
+    <item
+        android:id="@+id/nav_communicate"
+        android:title="Communicate">
         <menu>
             <item
                 android:id="@+id/nav_share"
@@ -33,6 +35,10 @@
                 android:id="@+id/nav_github"
                 android:icon="@drawable/github_icon"
                 android:title="Github" />
+            <item
+                android:id="@+id/nav_xdalab"
+                android:icon="@drawable/xdalab"
+                android:title="Vote in XDA Labs" />
             <item
                 android:id="@+id/nav_feedback"
                 android:icon="@drawable/ic_feedback"

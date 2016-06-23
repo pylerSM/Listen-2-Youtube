@@ -38,13 +38,6 @@ public class RecyclerViewFragment extends Fragment {
         return fragment;
     }
 
-    public void setAdapter(MaterialAdapter mAdapter) {
-        this.mAdapter = mAdapter;
-        if (mRecyclerView != null)
-            mRecyclerView.setAdapter(this.mAdapter.getMaterialAdapter());
-
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_recyclerview, container, false);
@@ -71,7 +64,8 @@ public class RecyclerViewFragment extends Fragment {
 
 
         mRecyclerView.setLayoutManager(layoutManager);
-        mRecyclerView.setAdapter(mAdapter.getMaterialAdapter());
+        if (mAdapter != null)
+            mRecyclerView.setAdapter(mAdapter.getMaterialAdapter());
         FadeInUpAnimator fadeInUpAnimator = new FadeInUpAnimator();
         fadeInUpAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
         fadeInUpAnimator.setAddDuration(350);

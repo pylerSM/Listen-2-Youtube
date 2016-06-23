@@ -3,7 +3,7 @@ package com.kapp.youtube;
 import android.app.Application;
 import android.content.Context;
 
-import com.google.firebase.analytics.FirebaseAnalytics;
+import net.hockeyapp.android.metrics.MetricsManager;
 
 import org.videolan.libvlc.util.JNILib;
 
@@ -21,9 +21,6 @@ public class MainApplication extends Application {
         applicationContext = this;
         JNILib.init(this);
         Settings.init(this);
-    }
-
-    public static FirebaseAnalytics getAnalytics() {
-        return FirebaseAnalytics.getInstance(applicationContext);
+        MetricsManager.register(this, this, Constants.HOCKEY_APP_ID);
     }
 }

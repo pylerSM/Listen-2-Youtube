@@ -49,7 +49,7 @@ import java.util.Random;
  */
 public class PlaybackService extends Service implements MyMediaPlayer.PlaybackListener, MusicFocusable {
     private static final String TAG = "PlaybackService";
-    public static final int DUCK_VOLUME = 10;
+    public static final int DUCK_VOLUME = 20;
     public static String ACTION_PAUSE = "PlaybackService.ACTION_PAUSE",
             ACTION_TOGGLE_PLAYBACK = "PlaybackService.ACTION_TOGGLE_PLAYBACK",
             ACTION_PLAY = "PlaybackService.ACTION_PLAY",
@@ -58,7 +58,8 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
             ACTION_DO_NOTHING = "PlaybackService.ACTION_DO_NOTHING",
             ACTION_PREVIOUS = "PlaybackService.ACTION_PREVIOUS",
             ACTION_PREVIEW = "PlaybackService.ACTION_PREVIEW",
-            ACTION_SEEK = "PlaybackService.ACTION_SEEK";
+            ACTION_SEEK = "PlaybackService.ACTION_SEEK",
+            ACTION_CHANGE_VOLUME = "PlaybackService.ACTION_CHANGE_VOLUME";
     private static final int FOREGROUND_ID = Integer.MAX_VALUE;
 
     boolean playOnline = false;
@@ -116,6 +117,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
 
         mediaPlayer = new MyMediaPlayer(this);
         mediaPlayer.setListener(this);
+        mediaPlayer.setVolume(Settings.getVolume());
         localFileDataList = new ArrayList<>();
         youtubeDataList = new ArrayList<>();
         trace = new ArrayList<>();
@@ -367,6 +369,9 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
                 if (seekTo != -1) {
                     seek(seekTo * 1000);
                 }
+            } else if (ACTION_CHANGE_VOLUME.equalsIgnoreCase(intent.getAction())) {
+                if (mediaPlayer != null)
+                    mediaPlayer.setVolume(Settings.getVolume());
             }
         }
         return START_NOT_STICKY;
@@ -618,7 +623,7 @@ public class PlaybackService extends Service implements MyMediaPlayer.PlaybackLi
         mAudioFocus = AudioFocus.Focused;
         if (mediaPlayer.isPaused() && mPauseReason == PauseReason.FocusLoss)
             mediaPlayer.play();
-        mediaPlayer.setVolume(100);
+        mediaPlayer.setVolume(Settings.getVolume());
     }
 
     @Override

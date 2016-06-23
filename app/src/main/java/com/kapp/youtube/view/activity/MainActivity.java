@@ -5,10 +5,12 @@ import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.ContentObserver;
+import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,9 +38,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.webkit.WebChromeClient;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.Toast;
@@ -60,10 +59,8 @@ import com.kapp.youtube.model.YoutubeData;
 import com.kapp.youtube.presenter.FetchLocalFileList;
 import com.kapp.youtube.presenter.FetchPlayList;
 import com.kapp.youtube.presenter.FetchRelatedVideo;
-import com.kapp.youtube.presenter.GetLink;
 import com.kapp.youtube.presenter.IPresenterCallback;
 import com.kapp.youtube.presenter.YoutubeQuery;
-import com.kapp.youtube.service.DownloadService;
 import com.kapp.youtube.service.PlaybackService;
 import com.kapp.youtube.view.adapter.LocalFileAdapter;
 import com.kapp.youtube.view.adapter.PlayListAdapter;
@@ -78,13 +75,9 @@ import net.hockeyapp.android.Tracking;
 import net.hockeyapp.android.UpdateManager;
 import net.hockeyapp.android.metrics.MetricsManager;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.videolan.libvlc.util.JNILib;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -142,7 +135,6 @@ public class MainActivity extends AppCompatActivity
     private boolean grantedPermission = true;
     private boolean loadLocalFile = true;
 
-    private WebView mWebView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,7 +152,7 @@ public class MainActivity extends AppCompatActivity
 
         materialViewPager = (MaterialViewPager) findViewById(R.id.materialViewPager);
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        final NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         // Init search view in Toolbar
@@ -177,12 +169,20 @@ public class MainActivity extends AppCompatActivity
             searchView.setHintSize(getResources().getDimension(R.dimen.search_text_medium));
             searchView.setVoice(true);
             searchView.setOnSearchMenuListener(new SearchView.SearchMenuListener() {
+                boolean setTintColor = false;
                 @Override
                 public void onMenuClick() {
                     if (drawer.isDrawerOpen(GravityCompat.START))
                         drawer.closeDrawer(GravityCompat.START);
-                    else
+                    else {
                         drawer.openDrawer(GravityCompat.START);
+                        if (!setTintColor) {
+                            setTintColor = true;
+                            navigationView.setItemIconTintList(null);
+                            navigationView.getMenu().findItem(R.id.nav_download).getIcon().setColorFilter(0xff4d4d4d, PorterDuff.Mode.SRC_ATOP);
+                        }
+
+                    }
                 }
             });
             toolbar.addView(searchView);
@@ -217,44 +217,29 @@ public class MainActivity extends AppCompatActivity
             checkFirstOpen();
         }
 
-        if (searchOnlineFragment == null) {
+        if (searchOnlineFragment == null || searchOnlineFragment.getAdapter() == null) {
             searchOnlineAdapter = new SearchOnlineAdapter(this, mHandler);
             searchOnlineFragment = RecyclerViewFragment.newInstance(searchOnlineAdapter);
-        } else {
+        } else
             searchOnlineAdapter = (SearchOnlineAdapter) searchOnlineFragment.getAdapter();
-            if (searchOnlineAdapter == null) {
-                searchOnlineAdapter = new SearchOnlineAdapter(this, mHandler);
-                searchOnlineFragment = RecyclerViewFragment.newInstance(searchOnlineAdapter);
-            }
-        }
 
 
-        if (localFileFragment == null) {
+        if (localFileFragment == null || localFileFragment.getAdapter() == null) {
             localFileAdapter = new LocalFileAdapter(this, mHandler);
             localFileFragment = RecyclerViewFragment.newInstance(localFileAdapter);
             loadLocalFile = false;
         } else {
             localFileAdapter = (LocalFileAdapter) localFileFragment.getAdapter();
-            if (localFileAdapter == null) {
-                localFileAdapter = new LocalFileAdapter(this, mHandler);
-                localFileFragment = RecyclerViewFragment.newInstance(localFileAdapter);
-            }
             loadLocalFile = localFileAdapter.getItemCount() != 0;
         }
 
-        if (playListFragment == null) {
+        if (playListFragment == null || playListFragment.getAdapter() == null) {
             playListAdapter = new PlayListAdapter(this, mHandler);
             playListFragment = RecyclerViewFragment.newInstance(playListAdapter);
             if (grantedPermission)
                 new FetchPlayList(this, JOB_TYPE_FETCH_PLAY_LIST, this).execute();
         } else {
             playListAdapter = (PlayListAdapter) playListFragment.getAdapter();
-            if (playListAdapter == null) {
-                playListAdapter = new PlayListAdapter(this, mHandler);
-                playListFragment = RecyclerViewFragment.newInstance(playListAdapter);
-                if (grantedPermission)
-                    new FetchPlayList(this, JOB_TYPE_FETCH_PLAY_LIST, this).execute();
-            }
         }
 
 
@@ -333,14 +318,12 @@ public class MainActivity extends AppCompatActivity
                 observer);
 
 
-        mWebView = new WebView(this);
-        mWebView.setWebChromeClient(new WebChromeClient());
-        mWebView.getSettings().setJavaScriptEnabled(true);
-
         /* HOCKEY SDK*/
         FeedbackManager.register(this);
         MetricsManager.register(this, getApplication(), Constants.HOCKEY_APP_ID);
         checkForUpdates();
+        CrashManager.resetAlwaysSend(new WeakReference<Context>(this));
+        CrashManager.register(this);
     }
 
     private void checkFirstOpen() {
@@ -471,9 +454,15 @@ public class MainActivity extends AppCompatActivity
     private void onSmallButtonClick(View view, int position, int fragmentId) {
         switch (fragmentId) {
             case SEARCH_ONLINE_TAB:
-                progressDialog = ProgressDialog.show(this, null, "Fetching urls...");
                 YoutubeData data = searchOnlineAdapter.getData(position);
-                new GetLink(JOB_TYPE_GET_LINK, this).execute(data.id, data.getTitle(), data.getDescription());
+                Intent intent = new Intent(this, DownloadOffline.class);
+                intent.setAction(DownloadOffline.DOWNLOAD_ACTION);
+                intent.putExtra(DownloadOffline.TITLE, data.getTitle());
+                intent.putExtra(DownloadOffline.YOUTUBE_ID, data.id);
+                startActivity(intent);
+                //progressDialog = ProgressDialog.show(this, null, "Fetching urls...");
+
+                //new GetLink(JOB_TYPE_GET_LINK, this).execute(data.id, data.getTitle(), data.getDescription());
                 break;
             case LOCAL_FILE_TAB:
                 showPopupPlaylist(view, position);
@@ -661,14 +650,19 @@ public class MainActivity extends AppCompatActivity
                     Intent i = new Intent(Intent.ACTION_SEND);
                     i.setType("text/plain");
                     i.putExtra(Intent.EXTRA_SUBJECT, "Youtube Music");
-                    String sAux = "Send XDA link";
-                    sAux = sAux + "http://forum.xda-developers.com/android/apps-games/app-youtube-music-sound-stream-youtubes-t3399722/";
+                    String sAux = "XDA Labs link:\n";
+                    sAux = sAux + "https://labs.xda-developers.com/store/app/com.kapp.youtube";
                     i.putExtra(Intent.EXTRA_TEXT, sAux);
                     startActivity(Intent.createChooser(i, "Choose one"));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 Utils.logEvent("share");
+                break;
+            case R.id.nav_xdalab:
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse("https://labs.xda-developers.com/store/app/com.kapp.youtube"));
+                startActivity(Intent.createChooser(i, "Vote"));
                 break;
             case R.id.nav_feedback:
                 FeedbackManager.showFeedbackActivity(MainActivity.this);
@@ -761,7 +755,8 @@ public class MainActivity extends AppCompatActivity
     public void onFinish(int jobType, Object result) {
         switch (jobType) {
             case JOB_TYPE_SEARCH:
-                progressDialog.dismiss();
+                if (progressDialog != null && progressDialog.isShowing())
+                    progressDialog.dismiss();
                 progressDialog = null;
                 if (result != null) {
                     YoutubeQuery.ResultValue resultValue = (YoutubeQuery.ResultValue) result;
@@ -808,111 +803,112 @@ public class MainActivity extends AppCompatActivity
                             Toast.LENGTH_SHORT).show();
                 break;
             case JOB_TYPE_GET_LINK:
-                progressDialog.dismiss();
-                progressDialog = null;
-                if (result != null) {
-                    final JSONObject jsonObject = (JSONObject) result;
-                    try {
-                        final String title = jsonObject.getString("title"),
-                                album = jsonObject.getString("album"),
-                                getLinkUrl = jsonObject.getString("getLinkUrl");
-                        final JSONObject audio = jsonObject.getJSONObject("audio");
-                        final List<String> items = new ArrayList<>(),
-                                urls = new ArrayList<>(), extensions = new ArrayList<>();
-                        urls.add(audio.getString("url"));
-                        extensions.add(audio.getString("extension"));
-                        items.add("Audio@mp3 - 320k");
-                        items.add("Audio@" + audio.getString("extension") + " - " + audio.getString("bitrate"));
-                        final JSONArray videos = jsonObject.getJSONArray("videos");
-                        for (int i = 0; i < videos.length(); i++) {
-                            items.add("Video@" + videos.getJSONObject(i).getString("extension")
-                                    + " - " + videos.getJSONObject(i).getString("resolution"));
-                            urls.add(videos.getJSONObject(i).getString("url"));
-                            extensions.add(videos.getJSONObject(i).getString("extension"));
-                        }
-                        MaterialDialog dialog = new MaterialDialog.Builder(this)
-                                .items(items)
-                                .title("Choose download link")
-                                .positiveText("OK")
-                                .autoDismiss(false)
-                                .itemsCallbackSingleChoice(1, new MaterialDialog.ListCallbackSingleChoice() {
-                                    @Override
-                                    public boolean onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
-                                        return true;
-                                    }
-                                })
-                                .onPositive(new MaterialDialog.SingleButtonCallback() {
-                                    @Override
-                                    public void onClick(@NonNull final MaterialDialog dialog, @NonNull DialogAction which) {
-                                        int index = dialog.getSelectedIndex();
-                                        Utils.logEvent("download");
-                                        if (index == 0) {
-                                            final ProgressDialog convertMp3Dialog = ProgressDialog.show(MainActivity.this, "", "Converting to mp3...");
-                                            convertMp3Dialog.setCancelable(true);
-                                            mWebView.setWebViewClient(new WebViewClient() {
-                                                @Override
-                                                public void onPageFinished(WebView view, String url) {
-                                                    super.onPageFinished(view, url);
-                                                    Log.e(TAG, "onPageFinished: " + url);
-                                                    if (convertMp3Dialog.isShowing() && url.contains("middle.php")) {
-                                                        try {
-                                                            convertMp3Dialog.dismiss();
-                                                        } catch (Exception ignore) {
-                                                        }
-                                                        Uri uri = Uri.parse(url);
-                                                        String server = uri.getQueryParameters("server").get(0);
-                                                        String hash = uri.getQueryParameters("hash").get(0);
-                                                        String file = null;
-                                                        try {
-                                                            file = URLEncoder.encode(uri.getQueryParameters("file").get(0), "utf-8");
-                                                        } catch (UnsupportedEncodingException e) {
-                                                            e.printStackTrace();
-                                                        }
-                                                        Intent intent = new Intent(MainActivity.this, DownloadService.class);
-                                                        intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
-                                                        intent.putExtra(DownloadService.URL, String.format("http://%s.listentoyoutube.com/download/%s/%s", server, hash, file));
-                                                        intent.putExtra(DownloadService.TITLE, title);
-                                                        intent.putExtra(DownloadService.ALBUM, album);
-                                                        intent.putExtra(DownloadService.FILE_NAME, Utils.getValidFileName(title) + ".mp3");
-                                                        intent.putExtra(DownloadService.TYPE, DownloadService.TYPE_MUSIC);
-                                                        startService(intent);
-                                                    }
-                                                }
-                                            });
-                                            mWebView.loadUrl(getLinkUrl);
-                                        } else {
-                                            String url = urls.get(index - 1);
-                                            Intent intent = new Intent(MainActivity.this, DownloadService.class);
-                                            intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
-                                            intent.putExtra(DownloadService.URL, url);
-                                            intent.putExtra(DownloadService.TITLE, title);
-                                            intent.putExtra(DownloadService.ALBUM, album);
-                                            intent.putExtra(DownloadService.FILE_NAME, Utils.getValidFileName(title)
-                                                    + "." + extensions.get(index - 1));
-                                            intent.putExtra(DownloadService.TYPE, index == 1 ?
-                                                    DownloadService.TYPE_MUSIC : DownloadService.TYPE_VIDEO);
-                                            startService(intent);
-                                        }
-                                        dialog.dismiss();
-                                    }
-                                })
-                                .negativeText("Cancel")
-                                .onNegative(new MaterialDialog.SingleButtonCallback() {
-                                    @Override
-                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                        dialog.dismiss();
-                                    }
-                                }).build();
-                        dialog.show();
-                    } catch (JSONException e) {
-                        Toast.makeText(MainActivity.this, "Fetch urls error.", Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    Toast.makeText(this, "Fetch urls error by some reasons:\n" +
-                            "- Your network connectivity\n" +
-                            "- Video not available for US", Toast.LENGTH_LONG).show();
-                }
-                break;
+//                if (progressDialog != null && progressDialog.isShowing())
+//                    progressDialog.dismiss();
+//                progressDialog = null;
+//                if (result != null) {
+//                    final JSONObject jsonObject = (JSONObject) result;
+//                    try {
+//                        final String title = jsonObject.getString("title"),
+//                                album = jsonObject.getString("album"),
+//                                getLinkUrl = jsonObject.getString("getLinkUrl");
+//                        final JSONObject audio = jsonObject.getJSONObject("audio");
+//                        final List<String> items = new ArrayList<>(),
+//                                urls = new ArrayList<>(), extensions = new ArrayList<>();
+//                        urls.add(audio.getString("url"));
+//                        extensions.add(audio.getString("extension"));
+//                        items.add("Audio@mp3 - 320k");
+//                        items.add("Audio@" + audio.getString("extension") + " - " + audio.getString("bitrate"));
+//                        final JSONArray videos = jsonObject.getJSONArray("videos");
+//                        for (int i = 0; i < videos.length(); i++) {
+//                            items.add("Video@" + videos.getJSONObject(i).getString("extension")
+//                                    + " - " + videos.getJSONObject(i).getString("resolution"));
+//                            urls.add(videos.getJSONObject(i).getString("url"));
+//                            extensions.add(videos.getJSONObject(i).getString("extension"));
+//                        }
+//                        MaterialDialog dialog = new MaterialDialog.Builder(this)
+//                                .items(items)
+//                                .title("Choose download link")
+//                                .positiveText("OK")
+//                                .autoDismiss(false)
+//                                .itemsCallbackSingleChoice(1, new MaterialDialog.ListCallbackSingleChoice() {
+//                                    @Override
+//                                    public boolean onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
+//                                        return true;
+//                                    }
+//                                })
+//                                .onPositive(new MaterialDialog.SingleButtonCallback() {
+//                                    @Override
+//                                    public void onClick(@NonNull final MaterialDialog dialog, @NonNull DialogAction which) {
+//                                        int index = dialog.getSelectedIndex();
+//                                        Utils.logEvent("download");
+//                                        if (index == 0) {
+//                                            final ProgressDialog convertMp3Dialog = ProgressDialog.show(MainActivity.this, "", "Converting to mp3...");
+//                                            convertMp3Dialog.setCancelable(true);
+//                                            mWebView.setWebViewClient(new WebViewClient() {
+//                                                @Override
+//                                                public void onPageFinished(WebView view, String url) {
+//                                                    super.onPageFinished(view, url);
+//                                                    Log.e(TAG, "onPageFinished: " + url);
+//                                                    if (convertMp3Dialog.isShowing() && url.contains("middle.php")) {
+//                                                        try {
+//                                                            convertMp3Dialog.dismiss();
+//                                                        } catch (Exception ignore) {
+//                                                        }
+//                                                        Uri uri = Uri.parse(url);
+//                                                        String server = uri.getQueryParameters("server").get(0);
+//                                                        String hash = uri.getQueryParameters("hash").get(0);
+//                                                        String file = null;
+//                                                        try {
+//                                                            file = URLEncoder.encode(uri.getQueryParameters("file").get(0), "utf-8");
+//                                                        } catch (UnsupportedEncodingException e) {
+//                                                            e.printStackTrace();
+//                                                        }
+//                                                        Intent intent = new Intent(MainActivity.this, DownloadService.class);
+//                                                        intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
+//                                                        intent.putExtra(DownloadService.URL, String.format("http://%s.listentoyoutube.com/download/%s/%s", server, hash, file));
+//                                                        intent.putExtra(DownloadService.TITLE, title);
+//                                                        intent.putExtra(DownloadService.ALBUM, album);
+//                                                        intent.putExtra(DownloadService.FILE_NAME, Utils.getValidFileName(title) + ".mp3");
+//                                                        intent.putExtra(DownloadService.TYPE, DownloadService.TYPE_MUSIC);
+//                                                        startService(intent);
+//                                                    }
+//                                                }
+//                                            });
+//                                            mWebView.loadUrl(getLinkUrl);
+//                                        } else {
+//                                            String url = urls.get(index - 1);
+//                                            Intent intent = new Intent(MainActivity.this, DownloadService.class);
+//                                            intent.setAction(DownloadService.ACTION_NEW_DOWNLOAD);
+//                                            intent.putExtra(DownloadService.URL, url);
+//                                            intent.putExtra(DownloadService.TITLE, title);
+//                                            intent.putExtra(DownloadService.ALBUM, album);
+//                                            intent.putExtra(DownloadService.FILE_NAME, Utils.getValidFileName(title)
+//                                                    + "." + extensions.get(index - 1));
+//                                            intent.putExtra(DownloadService.TYPE, index == 1 ?
+//                                                    DownloadService.TYPE_MUSIC : DownloadService.TYPE_VIDEO);
+//                                            startService(intent);
+//                                        }
+//                                        dialog.dismiss();
+//                                    }
+//                                })
+//                                .negativeText("Cancel")
+//                                .onNegative(new MaterialDialog.SingleButtonCallback() {
+//                                    @Override
+//                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+//                                        dialog.dismiss();
+//                                    }
+//                                }).build();
+//                        dialog.show();
+//                    } catch (JSONException e) {
+//                        Toast.makeText(MainActivity.this, "Fetch urls error.", Toast.LENGTH_SHORT).show();
+//                    }
+//                } else {
+//                    Toast.makeText(this, "Fetch urls error by some reasons:\n" +
+//                            "- Your network connectivity\n" +
+//                            "- Video not available for US", Toast.LENGTH_LONG).show();
+//                }
+//                break;
             case JOB_TYPE_FETCH_RELATED_VIDEO:
                 if (result != null) {
                     List<YoutubeData> youtubeDatas = (List<YoutubeData>) result;
@@ -940,7 +936,8 @@ public class MainActivity extends AppCompatActivity
             case LOCAL_FILE_TAB:
                 progressDialog = ProgressDialog.show(this, null, "Search in progress...");
                 localFileAdapter.filter(query);
-                progressDialog.dismiss();
+                if (progressDialog != null && progressDialog.isShowing())
+                    progressDialog.dismiss();
                 progressDialog = null;
                 break;
             case PLAY_LIST_TAB:
@@ -981,8 +978,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-        CrashManager.register(this);
-        CrashManager.alwaysSend(this);
         Tracking.startUsage(this);
     }
 

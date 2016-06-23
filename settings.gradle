@@ -1,1 +1,1 @@
-include ':app', ':searchview', ':materialviewpager', ':ripple-lib', ':hockeysdk', ':vlc-android-sdk'
+include ':app', ':searchview', ':materialviewpager', ':ripple-lib', ':hockeysdk', ':vlc-android-sdk', ':HockeySDK-4.1.0-beta.2'

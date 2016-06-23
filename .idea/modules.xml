@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/HockeySDK-4.1.0-beta.2/HockeySDK-4.1.0-beta.2.iml" filepath="$PROJECT_DIR$/HockeySDK-4.1.0-beta.2/HockeySDK-4.1.0-beta.2.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/hockeysdk/hockeysdk.iml" filepath="$PROJECT_DIR$/hockeysdk/hockeysdk.iml" />
       <module fileurl="file://$PROJECT_DIR$/listen-2-youtube.iml" filepath="$PROJECT_DIR$/listen-2-youtube.iml" />

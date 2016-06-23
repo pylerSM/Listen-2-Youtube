@@ -47,7 +47,8 @@
         <activity
             android:name="com.kapp.youtube.view.activity.DownloadManagerActivity"
             android:label="Download management"
-            android:theme="@style/AppBaseTheme" />
+            android:theme="@style/AppBaseTheme"
+            android:launchMode="singleTop" />
 
         <service android:name="com.kapp.youtube.service.DownloadService">
             <intent-filter>
@@ -115,6 +116,7 @@
                 <action android:name="PlaybackService.ACTION_PREVIOUS"/>
                 <action android:name="PlaybackService.ACTION_PREVIEW"/>
                 <action android:name="PlaybackService.ACTION_SEEK" />
+                <action android:name="PlaybackService.ACTION_CHANGE_VOLUME" />
             </intent-filter>
         </service>
 

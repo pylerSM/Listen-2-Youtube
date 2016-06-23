@@ -10,13 +10,13 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
-import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
-import com.google.firebase.analytics.FirebaseAnalytics;
 import com.kapp.youtube.model.LocalFileData;
+
+import net.hockeyapp.android.metrics.MetricsManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -158,8 +158,6 @@ public class Utils {
     }
 
     public static void logEvent(String event) {
-        Bundle bundle = new Bundle();
-        bundle.putInt(FirebaseAnalytics.Param.VALUE, Settings.increaseTime(event));
-        MainApplication.getAnalytics().logEvent(event, bundle);
+        MetricsManager.trackEvent(event);
     }
 }
